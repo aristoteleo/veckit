@@ -56,3 +56,15 @@ format is valid, not how well you'll do on the real held-out target.
 
 Full task definitions and metric rationale: [virtualembryo.ai](https://virtualembryo.ai) and
 [aristoteleo/virtualembryo](https://github.com/aristoteleo/virtualembryo).
+
+## Synthetic T2 checks
+
+The `tests/` directory includes a small synthetic-only T2 regression/conformance check. It uses fake genes,
+fake cell types, deterministic coordinates, and temporary files; it does not use Challenge validation/test
+truth or claim to predict hidden leaderboard scores.
+
+```bash
+python tests/run_t2_synthetic_conformance.py
+```
+
+See [`tests/README.md`](tests/README.md) for the frozen `veckit==0.1.1` scope and limitations.
