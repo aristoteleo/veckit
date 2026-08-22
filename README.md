@@ -52,6 +52,19 @@ baseline tables.
 definition, data you already had — so this only tells you the scoring pipeline runs and your submission
 format is valid, not how well you'll do on the real held-out target.
 
+## Synthetic adversarial controls
+
+The [`examples/synthetic_controls`](examples/synthetic_controls) walkthrough provides synthetic-only,
+executable implementations of the eight adversarial controls described on the Challenge Baselines page.
+It includes deterministic fixtures, formula/property tests, and a one-command run through the public scorer:
+
+```bash
+python examples/synthetic_controls/run_controls.py --task all --seed 1101
+```
+
+These examples implement the public descriptions; they are not server-equivalent controls or leaderboard
+predictors. See the example README for the explicit `ctrl_one_cell` and `ctrl_random_dir` interpretations.
+
 ## More
 
 Full task definitions and metric rationale: [virtualembryo.ai](https://virtualembryo.ai) and
