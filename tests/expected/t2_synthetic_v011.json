@@ -1,0 +1,28 @@
+{
+  "version": "veckit==0.1.1",
+  "upstream_commit": "46d41e63f42a9aab815db20b742feeccd249cb17",
+  "source": "synthetic-only",
+  "fixture_seed": 1101,
+  "score_seed": 0,
+  "fixture": "asymmetric_t2_small",
+  "metrics": {
+    "d2_shape": 0.01464,
+    "de_direction": 0.8781,
+    "de_score": 1.0,
+    "mmd_u": -0.00678,
+    "neighborhood_mmd": -0.00382,
+    "occupancy_dice": 0.5556,
+    "scale_log_ratio": 0.0123,
+    "variogram": 2.2e-05
+  },
+  "tolerances": {
+    "d2_shape": 1e-05,
+    "de_direction": 0.0001,
+    "de_score": 0.0001,
+    "mmd_u": 1e-05,
+    "neighborhood_mmd": 1e-05,
+    "occupancy_dice": 0.0001,
+    "scale_log_ratio": 0.0001,
+    "variogram": 1e-06
+  }
+}
