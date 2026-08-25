@@ -41,8 +41,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 import numpy as np
-sys.path.insert(0, str(Path(__file__).parent.parent))
-from common.core_metrics import (de_score, de_direction, severity_slope, mmd_unbiased,
+from common.core_metrics import (de_score, de_direction, severity_slope, severity_ratio, mmd_unbiased,
                                  energy_distance, variogram_score, pb_rel_err, variance_ratio,
                                  library_size_ratio)
 from common.shape_metrics import (d2_distance, sliced_wasserstein, occupancy_dice,
@@ -55,10 +54,14 @@ def score_task3_v2(pred_X, pred_C, pred_ct, true_ko_X, true_C, true_ct, wt_X, pr
     if probe is None: probe = train_frozen_probe(true_ko_X, true_ct)
     de = de_score(pred_X, true_ko_X, wt_X)
     slope, slope_r2 = severity_slope(pred_X, true_ko_X, wt_X)
+    sev_ratio, _ = severity_ratio(pred_X, true_ko_X, wt_X)
     out = {
         # ---- primary: the response ----
         "de_score":           round(de["score"], 4) if np.isfinite(de["score"]) else None,
         "de_direction":       round(de_direction(pred_X, true_ko_X, wt_X), 4),
+        # `severity_ratio` is what ranks (bounded, no hand-chosen floor constant); `severity_slope` is
+        # kept alongside it as the SIGNED diagnostic, so a reader can still tell overshoot from undershoot.
+        "severity_ratio":     round(sev_ratio, 4) if np.isfinite(sev_ratio) else None,
         "severity_slope":     round(slope, 4) if np.isfinite(slope) else None,
         # ---- primary: the mutant state as a distribution ----
         "energy_distance":    round(energy_distance(pred_X, true_ko_X, seed=seed), 5),

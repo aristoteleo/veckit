@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "veckit"
-version = "0.1.1"
+version = "0.2.0"
 description = "Virtual Embryo Challenge (VEC) local scorer: score a submitted .h5ad against the T1/T2/T3 metric panels, offline, against reference files you supply."
 readme = "README.md"
 requires-python = ">=3.9"

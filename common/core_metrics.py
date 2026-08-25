@@ -260,6 +260,44 @@ def severity_slope(pred_X, true_X, ref_X, alpha=0.05, min_lfc=MIN_LFC):
     return float(np.log(beta)), round(r2, 4)
 
 
+def severity_ratio(pred_X, true_X, ref_X, alpha=0.05, min_lfc=MIN_LFC):
+    """**Bounded** form of `severity_slope`: min(beta, 1/beta) in [0, 1]. 1 = exactly the right severity.
+
+    Same question, same regression, same degenerate cases -- only the reporting scale differs, and that
+    scale is what decides whether the metric can separate submissions.
+
+    `severity_slope` returns log(beta), which is unbounded, so a no-response prediction has to be pinned to
+    a hand-chosen constant (`SEVERITY_LOG_WORST = log(1e-3)`, i.e. |log| = 6.91) for the floor to be finite.
+    Nothing in the data picks 1e-3 rather than 1e-2 or 1e-6, and the choice sets the whole scale: with a
+    floor that far away, `skill()`'s hyperbolic map compresses every realistic prediction into the top few
+    points. Measured on the T3 Gata4 board, a prediction whose response is **2x too strong still scores
+    91/100**, and 90 is only reached at a 2.2x error -- which is why that column reads 99.x for essentially
+    every submission and ranks nothing.
+
+    Folding the ratio instead of taking its log removes the free constant entirely:
+
+        beta = 1     -> 1.00      (exactly right)
+        beta = 2     -> 0.50      (twice too strong)   |  beta = 0.5 -> 0.50 (twice too weak)
+        beta = 10    -> 0.10                           |  beta = 0.1 -> 0.10
+        beta <= 0    -> 0.00      (inverted response)
+        no response  -> 0.00      (complete undershoot)
+
+    Over- and under-shoot by the same factor score the same, exactly as taking |log| did; the sign is not
+    lost to the reader because `severity_slope` is still computed and reported as a diagnostic.
+
+    The property that motivated the slope in the first place is untouched: a random direction with the
+    right magnitude regresses to beta ~ 0 and therefore scores ~0, so it cannot win this metric the way it
+    won the norm-ratio version this replaces.
+    """
+    log_beta, r2 = severity_slope(pred_X, true_X, ref_X, alpha=alpha, min_lfc=min_lfc)
+    if log_beta != log_beta:                    # NaN: board undefined, propagate unchanged
+        return float("nan"), r2
+    if log_beta <= SEVERITY_LOG_WORST:          # no / inverted / unrelated response
+        return 0.0, r2
+    beta = float(np.exp(log_beta))
+    return float(min(beta, 1.0 / beta)), r2
+
+
 # ---------------------------------------------------------------- distribution
 def mmd_unbiased(pred_X, true_X, n=2000, n_pc=30, seed=0, scales=(0.25, 0.5, 1.0, 2.0, 4.0)):
     """**Unbiased** multi-kernel RBF-MMD^2 in a PCA space fitted on the observed cells only.

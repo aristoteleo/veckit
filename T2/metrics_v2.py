@@ -23,12 +23,11 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 import numpy as np
-sys.path.insert(0, str(Path(__file__).parent.parent))
 from common.core_metrics import (de_score, de_direction, mmd_unbiased, energy_distance,
                                  variogram_score, pb_rel_err, variance_ratio,
                                  library_size_ratio)
-from common.shape_metrics import (d2_distance, sliced_wasserstein, occupancy_dice,
-                                  scale_log_ratio, count_log_ratio)
+from common.shape_metrics import (d2_distance, sliced_wasserstein, occupancy_dice, size_fidelity,
+                                  scale_log_ratio, scale_ratio, count_log_ratio)
 from metrics import (composition_jsd, train_frozen_probe, pseudobulk_pearson,
                      neighborhood_mmd, morans_I_agreement)
 
@@ -51,6 +50,14 @@ def score_task2_v2(pred_X, pred_coords, pred_ct, true_X, true_coords, true_ct, r
         "sliced_wasserstein":  round(sw, 5),
         "occupancy_dice":      round(dice, 4),
         # ---- primary: growth, as two separate questions ----
+        # `scale_ratio` is what ranks (unsigned, so a leaderboard score gives no search
+        # direction); `scale_log_ratio` is kept as the SIGNED diagnostic -- a reader still needs
+        # to know whether a prediction is too big or too small.
+        # `size_fidelity` is what ranks: tissue scale AND cell scale, so a uniform rescale that
+        # buys the first pays for it in the second. `scale_ratio` (unsigned) and
+        # `scale_log_ratio` (signed) stay as diagnostics that decompose it.
+        "size_fidelity":       round(size_fidelity(pred_coords, true_coords), 4),
+        "scale_ratio":         round(scale_ratio(pred_coords, true_coords), 4),
         "scale_log_ratio":     round(scale_log_ratio(pred_coords, true_coords), 4),
         "count_log_ratio":     round(count_log_ratio(pred_X.shape[0], true_X.shape[0]), 4),
         # ---- primary: local organisation ----
