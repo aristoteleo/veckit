@@ -276,21 +276,43 @@ def mmd_unbiased(pred_X, true_X, n=2000, n_pc=30, seed=0, scales=(0.25, 0.5, 1.0
     for a full-space check.
     """
     from sklearn.decomposition import PCA
-    from sklearn.metrics.pairwise import rbf_kernel
+    from sklearn.metrics.pairwise import euclidean_distances
     pred_X, true_X = to_dense(pred_X), to_dense(true_X)
     rng = np.random.default_rng(seed)
     pca = PCA(n_components=min(n_pc, true_X.shape[1]), random_state=0).fit(true_X)
     A = pca.transform(pred_X[rng.choice(pred_X.shape[0], min(n, pred_X.shape[0]), replace=False)])
     B = pca.transform(true_X[rng.choice(true_X.shape[0], min(n, true_X.shape[0]), replace=False)])
-    d2 = np.sum((B[:, None] - B[None, :]) ** 2, -1)
+    # Keep the exact median heuristic and direct-subtraction arithmetic, but
+    # bound the temporary (rows, cells, PCs) array instead of allocating it
+    # for all cells. At 2,000 cells / 30 PCs the full float32 array is 480 MB.
+    d2 = np.empty((len(B), len(B)), dtype=B.dtype)
+    for start in range(0, len(B), 64):
+        block = B[start:start + 64, None] - B[None, :]
+        np.square(block, out=block)
+        d2[start:start + 64] = block.sum(axis=-1)
     gamma0 = 1.0 / (np.median(d2[d2 > 0]) + 1e-9)
+    del d2, block
     na, nb = A.shape[0], B.shape[0]
+    # rbf_kernel uses these squared distances internally. Compute them once
+    # for the whole bandwidth mixture, retaining its precision and diagonal
+    # handling. One temporary kernel at a time avoids three live kernel arrays.
+    Daa = euclidean_distances(A, A, squared=True)
+    Dbb = euclidean_distances(B, B, squared=True)
+    Dab = euclidean_distances(A, B, squared=True)
     tot = 0.0
     for s in scales:
         g = gamma0 * s
-        Kaa, Kbb, Kab = rbf_kernel(A, A, g), rbf_kernel(B, B, g), rbf_kernel(A, B, g)
-        np.fill_diagonal(Kaa, 0.0); np.fill_diagonal(Kbb, 0.0)
-        tot += (Kaa.sum() / (na * (na - 1)) + Kbb.sum() / (nb * (nb - 1)) - 2 * Kab.mean())
+        reductions = []
+        for distances, within in ((Daa, True), (Dbb, True), (Dab, False)):
+            kernel = np.multiply(distances, -g)
+            np.exp(kernel, out=kernel)
+            if within:
+                np.fill_diagonal(kernel, 0.0)
+                reductions.append(kernel.sum())
+            else:
+                reductions.append(kernel.mean())
+            del kernel
+        tot += (reductions[0] / (na * (na - 1)) + reductions[1] / (nb * (nb - 1)) - 2 * reductions[2])
     return float(tot / len(scales))
 
 
