@@ -5,7 +5,11 @@
                     genes by how highly expressed they already are achieves? Rank-based and sign-split, so
                     rescaling or negating a prediction is no longer rewarded.
     de_direction    signed agreement of the change, with the reference expression level partialled out
-    energy_distance full-500-gene-space distributional distance (no PCA blind subspace)
+    energy_distance distributional distance in the FULL gene space of the files you supply -- no PCA
+                    projection, so no blind subspace. (Task 1 is the 10x Multiome single-cell release,
+                    ~32k genes; it is NOT the 500-gene 4DMERFISH panel T2/T3 use. An earlier revision
+                    of this line said "full-500-gene-space", from when the T1 pipeline was pointed at
+                    the spatial release by mistake -- the scorer never subsetted genes.)
     mmd_u           unbiased multi-kernel MMD in a truth-fitted PCA space
     variogram       gene-gene covariance structure — the only term that constrains the joint
   CONSTRAINT (reported, not ranked)

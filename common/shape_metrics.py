@@ -178,6 +178,110 @@ def scale_log_ratio(pred_C, true_C):
     return float(np.log(a / b)) if a > 0 and b > 0 else float("nan")
 
 
+def scale_ratio(pred_C, true_C):
+    """**Unsigned, bounded** form of `scale_log_ratio`: min(r, 1/r) in (0, 1]. 1 = the right size.
+
+    Same question and same estimator (RMS radius, rotation- and translation-invariant); only the reporting
+    scale differs, and that scale is what decides whether the metric can be searched rather than modelled.
+
+    `scale_log_ratio` is SIGNED, which is exactly right for a diagnostic — a reader wants to know whether a
+    prediction is too big or too small — and exactly wrong for a ranked score on a public leaderboard. Size
+    is a single scalar degree of freedom, and rescaling a point cloud about its centroid changes nothing
+    else that is scored: `d2_shape` and `occupancy_dice` both canonicalise by RMS radius first, so they are
+    invariant to it. Measured on the embryo interpolation board, rescaling the FLOOR's coordinates takes its
+    size score from 50 to 100 in five submissions of bisection search, with `occupancy_dice` fixed at 0.7047
+    and `d2_shape` at 0.0531 to four decimals throughout. The sign is what makes five submissions enough:
+    each score tells the searcher which way to move next.
+
+    Folding the ratio removes that gradient. Over- and under-shoot by the same factor now score the same, so
+    a submission's score no longer says which side of the target it is on, and a searcher has to explore
+    rather than bisect. It does not make size unlearnable — a model that predicts growth correctly still
+    scores 1.0 — and it does not make search impossible, only uninformed.
+
+        r = 1     -> 1.00      (exactly the right size)
+        r = 1.25  -> 0.80      |  r = 0.8  -> 0.80
+        r = 2     -> 0.50      |  r = 0.5  -> 0.50
+
+    `scale_log_ratio` remains available and is reported alongside as the signed diagnostic.
+    """
+    def rms(C):
+        C = np.asarray(C, float); X = C - C.mean(0)
+        return float(np.sqrt((X ** 2).sum(1).mean()))
+    a, b = rms(pred_C), rms(true_C)
+    if not (a > 0 and b > 0):
+        return float("nan")
+    r = a / b
+    return float(min(r, 1.0 / r))
+
+
+def median_nn_distance(C, seed=0, n=4000):
+    """Median nearest-neighbour distance — the CELL-level length scale of a point cloud."""
+    from sklearn.neighbors import NearestNeighbors
+    C = np.asarray(C, float)
+    if len(C) < 2:
+        return float("nan")
+    if len(C) > n:
+        C = C[np.random.default_rng(seed).choice(len(C), n, replace=False)]
+    d, _ = NearestNeighbors(n_neighbors=2).fit(C).kneighbors(C)
+    return float(np.median(d[:, 1]))
+
+
+def size_fidelity(pred_C, true_C, seed=0):
+    """Did the tissue reach the right SIZE — at both the tissue scale and the cell scale?
+
+    Mean of two folded ratios, each in (0, 1], 1 = exactly right:
+
+        tissue scale : min(r, 1/r)   with r = RMS radius ratio            (how big the organ is)
+        cell scale   : min(q, 1/q)   with q = median NN distance ratio    (how far apart cells sit)
+
+    WHY TWO SCALES AND NOT ONE. Size measured only as an RMS radius is a single scalar that a submission
+    can set freely, and setting it costs nothing elsewhere: `d2_shape` and `occupancy_dice` canonicalise
+    by RMS radius before comparing, so they are invariant to a rescale. Rescaling the FLOOR's coordinates
+    about their centroid -- a prediction with no modelling in it whatsoever -- took the old size score
+    from 50 to 100 while leaving occupancy_dice at 0.6748 and d2_shape at 0.0308, unchanged to four
+    decimals. Signed reporting made it worse: each leaderboard score revealed which way to move, so five
+    submissions of bisection search were enough to land it.
+
+    Cells, however, do not change size when an embryo grows; the tissue gets bigger by acquiring more of
+    them. That is visible in the released data, and it is what makes the second scale an anchor rather
+    than a redundant copy of the first:
+
+        heart   E8.25   E8.5    E8.75   E9.5    E10.5   E12.5
+        RMS     355.6   254.6   216.3   335.2   439.9   511.5     <- swings 2.4x, and not monotonically
+        NN dist  17.10   17.76   16.27   17.17   16.83   17.06     <- constant to +/-4%
+
+    A real prediction that grows the tissue correctly leaves cell spacing alone and scores well on both
+    terms. A uniform rescale moves them TOGETHER, so buying the first term costs the second: on the heart
+    interpolation board the same rescale attack now scores 53.6 instead of 100.0, and on embryo 84.1
+    instead of 100.0, while the attainable ceiling still scores 100.0 and the floor still 50.0.
+
+    (The heart NN row also explains the RMS row: a length scale that is constant across stages while the
+    organ radius swings non-monotonically points at the imaged field of view differing between stages,
+    not at the heart shrinking. See `common/scale_comparability.py`.)
+
+    ASSUMPTION. This reads a nearest-neighbour distance, so it assumes a submission returns coordinates
+    for INDIVIDUAL CELLS. A method that emits a density field or an aggregated representation has no cell
+    spacing to measure, and this metric is not meaningful for it. `scale_log_ratio` (signed) and
+    `scale_ratio` (unsigned) remain available and are reported alongside, so a size result can always be
+    decomposed into which of the two scales went wrong.
+
+    Weighting is 50/50 rather than tuned: the two terms answer equally necessary halves of "is this the
+    right size", and no board was used to choose a split between them.
+    """
+    def rms(C):
+        C = np.asarray(C, float); X = C - C.mean(0)
+        return float(np.sqrt((X ** 2).sum(1).mean()))
+
+    def fold(x):
+        return float(min(x, 1.0 / x)) if x > 0 and np.isfinite(x) else 0.0
+
+    a, b = rms(pred_C), rms(true_C)
+    tissue = fold(a / b) if (a > 0 and b > 0) else 0.0
+    p, q = median_nn_distance(pred_C, seed=seed), median_nn_distance(true_C, seed=seed)
+    cell = fold(p / q) if (np.isfinite(p) and np.isfinite(q) and q > 0) else 0.0
+    return float(0.5 * (tissue + cell))
+
+
 def count_log_ratio(n_pred, n_true):
     """Signed log ratio of cell number — proliferation as its own axis. 0 = the right number of cells.
 
