@@ -63,12 +63,34 @@ REMOVED, and why -- so nobody reintroduces them
   participants never submit.
 """
 from __future__ import annotations
+import sys
+import time as _time
 import numpy as np
 from scipy import sparse
 
 
+_LOG_T0 = _time.time()
+def _log(msg):
+    """Stage-progress log to stderr (never stdout, so the JSON result stays clean)."""
+    print(f"[veckit] {msg} ({_time.time() - _LOG_T0:.1f}s)", file=sys.stderr, flush=True)
+
+
+
 def to_dense(X): return X.toarray() if sparse.issparse(X) else np.asarray(X)
-def pseudobulk(X): return np.asarray(to_dense(X).mean(0)).ravel()
+def _dense(X):
+    """Densify a (small, already-sampled/chunked) block, PRESERVING the source dtype."""
+    if sparse.issparse(X):
+        arr = X.toarray()                      # scipy returns float64
+        if arr.dtype != X.dtype:
+            arr = arr.astype(X.dtype, copy=False)   # keep float32 arithmetic identical to the old path
+        return np.ascontiguousarray(arr)       # force C order so BLAS matmul matches the legacy layout
+    return np.asarray(X)
+
+def pseudobulk(X):
+    """Per-gene mean expression. Sparse-aware: mean(axis=0) on a CSR/CSC matrix never densifies the full
+    matrix -- only an O(nnz) reduction over stored nonzeros. Same quantity as `to_dense(X).mean(0)` up to
+    float32 accumulation order."""
+    return np.asarray(X.mean(axis=0)).ravel()
 
 
 def _pairwise_euclidean(A, B):
@@ -96,7 +118,7 @@ SEVERITY_LOG_WORST = float(np.log(1e-3))   # severity_slope of a no-/wrong-respo
 #                                            undershoot (beta -> 0), reported as a finite floor (~ -6.9) so
 #                                            it can anchor skill instead of collapsing the group to NaN.
 
-def de_genes(X_cond, X_ref, alpha=0.05, min_lfc=MIN_LFC, min_cells=10):
+def de_genes(X_cond, X_ref, alpha=0.05, min_lfc=MIN_LFC, min_cells=10, chunk=256):
     """Significant DE genes, split by direction, by Wilcoxon rank-sum + Benjamini-Hochberg FDR at `alpha`
     and an effect of at least `min_lfc` in mean log-expression.
 
@@ -105,14 +127,25 @@ def de_genes(X_cond, X_ref, alpha=0.05, min_lfc=MIN_LFC, min_cells=10):
     78/78 on Task 3. It is kept because it will start to bind on smaller cell counts or a wider panel, but
     the honest description of this selection is "genes whose mean moved by at least `min_lfc`", and the
     scoring below is built so that this does not matter: only the *ranking* of the truth's genes is used.
+
+    Column-chunked so the full dense `A`, `B` (n_cells x n_genes) are never materialised at once: each gene
+    (column) is independent under Mann-Whitney, so per-chunk columns are bit-identical to the full call.
     """
     from scipy.stats import mannwhitneyu
-    A, B = to_dense(X_cond), to_dense(X_ref)
-    lfc = pseudobulk(A) - pseudobulk(B)
-    if A.shape[0] < min_cells or B.shape[0] < min_cells:
+    lfc = pseudobulk(X_cond) - pseudobulk(X_ref)
+    if X_cond.shape[0] < min_cells or X_ref.shape[0] < min_cells:
         return np.array([], int), np.array([], int), lfc
+    c_cond = X_cond.tocsc() if sparse.issparse(X_cond) else X_cond
+    c_ref = X_ref.tocsc() if sparse.issparse(X_ref) else X_ref
+    G = X_cond.shape[1]
+    p = np.empty(G, float); stat = np.empty(G, float)
     with np.errstate(all="ignore"):
-        stat, p = mannwhitneyu(A, B, axis=0, alternative="two-sided")     # tie-corrected by default
+        for g0 in range(0, G, chunk):
+            g1 = min(g0 + chunk, G)
+            Ac = _dense(c_cond[:, g0:g1])
+            Bc = _dense(c_ref[:, g0:g1])
+            s, pv = mannwhitneyu(Ac, Bc, axis=0, alternative="two-sided")   # tie-corrected by default
+            stat[g0:g1] = s; p[g0:g1] = pv
     p = np.nan_to_num(p, nan=1.0)
     order = np.argsort(p); m = len(p)
     below = p[order] <= alpha * (np.arange(1, m + 1) / m)                 # Benjamini-Hochberg
@@ -271,17 +304,23 @@ def mmd_unbiased(pred_X, true_X, n=2000, n_pc=30, seed=0, scales=(0.25, 0.5, 1.0
     sit in the blind spot of a single kernel width. The PCA basis and the bandwidth are both properties of
     the target alone, identical for every submission.
 
+    The PCA is fit on a dense copy of the FULL `true_X`, preserving the released metric's solver selection
+    and numerical semantics. This is one unavoidable transient allocation: sklearn's `auto` selects ARPACK
+    for sparse input but may select the full or randomized solver for dense input, and those bases diverge at
+    the official 32,285-gene scale. Only the sampled rows are transformed afterward, directly from sparse.
+
     Still note the residual limitation, which no bandwidth mixture fixes: PCA to `n_pc` components is a
     linear projection, so any structure in the discarded subspace is invisible. Use `energy_distance` below
     for a full-space check.
     """
     from sklearn.decomposition import PCA
     from sklearn.metrics.pairwise import rbf_kernel
-    pred_X, true_X = to_dense(pred_X), to_dense(true_X)
     rng = np.random.default_rng(seed)
-    pca = PCA(n_components=min(n_pc, true_X.shape[1]), random_state=0).fit(true_X)
-    A = pca.transform(pred_X[rng.choice(pred_X.shape[0], min(n, pred_X.shape[0]), replace=False)])
-    B = pca.transform(true_X[rng.choice(true_X.shape[0], min(n, true_X.shape[0]), replace=False)])
+    pca = PCA(n_components=min(n_pc, true_X.shape[1]), random_state=0).fit(to_dense(true_X))
+    pa = rng.choice(pred_X.shape[0], min(n, pred_X.shape[0]), replace=False)
+    pb = rng.choice(true_X.shape[0], min(n, true_X.shape[0]), replace=False)
+    A = pca.transform(pred_X[pa])
+    B = pca.transform(true_X[pb])
     d2 = np.sum((B[:, None] - B[None, :]) ** 2, -1)
     gamma0 = 1.0 / (np.median(d2[d2 > 0]) + 1e-9)
     na, nb = A.shape[0], B.shape[0]
@@ -302,18 +341,21 @@ def energy_distance(pred_X, true_X, n=1500, seed=0):
     This exists because every other distributional term in the suite lives in a 30-PC space, which is a
     linear map: perturbations inside its 470-dimensional null space leave the score bit-identical. Uses
     n(n-1) denominators for the within-sample terms, so the split-half ceiling is not inflated by a diagonal.
+
+    Sampling semantics preserved: the same rng(seed) row choice as before, but rows are selected from the
+    sparse matrix FIRST and only the ~n sampled rows are densified (instead of densifying the whole matrix).
     """
-    A, B = to_dense(pred_X), to_dense(true_X)
     rng = np.random.default_rng(seed)
-    A = A[rng.choice(A.shape[0], min(n, A.shape[0]), replace=False)]
-    B = B[rng.choice(B.shape[0], min(n, B.shape[0]), replace=False)]
+    pa = rng.choice(pred_X.shape[0], min(n, pred_X.shape[0]), replace=False)
+    pb = rng.choice(true_X.shape[0], min(n, true_X.shape[0]), replace=False)
+    A, B = _dense(pred_X[pa]), _dense(true_X[pb])
     na, nb = A.shape[0], B.shape[0]
     Daa, Dbb = _pairwise_euclidean(A, A), _pairwise_euclidean(B, B)
     return float(2 * _pairwise_euclidean(A, B).mean()
                  - Daa.sum() / (na * (na - 1)) - Dbb.sum() / (nb * (nb - 1)))
 
 
-def variogram_score(pred_X, true_X, n_pairs=20000, n_cells=1500, p=0.5, seed=0):
+def variogram_score(pred_X, true_X, n_pairs=20000, n_cells=1500, p=0.5, seed=0, chunk=2000):
     """**Is the gene-gene covariance structure right?** — the only term in the suite that constrains the joint.
 
     For randomly sampled gene pairs (i, j), compare E|x_i - x_j|^p between prediction and truth:
@@ -325,16 +367,25 @@ def variogram_score(pred_X, true_X, n_pairs=20000, n_cells=1500, p=0.5, seed=0):
     them. The variogram score is the component of the proper-scoring-rule literature designed for exactly
     that failure (the energy score is known to be weak on correlation structure). Lower is better; 0 for a
     perfect match.
+
+    Semantics preserved: the same rng(seed) cell and gene-pair draws, but rows are sampled from the sparse
+    matrix first and only the ~n_cells sampled rows are densified. The ~n_pairs x n_cells difference array
+    is built in `chunk`-pair blocks so no large temporary is held at once; per-pair means are accumulated
+    verbatim and the (va-vb)^2 reduction is unchanged.
     """
-    A, B = to_dense(pred_X), to_dense(true_X)
     rng = np.random.default_rng(seed)
-    A = A[rng.choice(A.shape[0], min(n_cells, A.shape[0]), replace=False)]
-    B = B[rng.choice(B.shape[0], min(n_cells, B.shape[0]), replace=False)]
+    pa = rng.choice(pred_X.shape[0], min(n_cells, pred_X.shape[0]), replace=False)
+    pb = rng.choice(true_X.shape[0], min(n_cells, true_X.shape[0]), replace=False)
+    A, B = _dense(pred_X[pa]), _dense(true_X[pb])
     G = A.shape[1]
     i = rng.integers(0, G, n_pairs); j = rng.integers(0, G, n_pairs)
     keep = i != j; i, j = i[keep], j[keep]
-    va = (np.abs(A[:, i] - A[:, j]) ** p).mean(0)
-    vb = (np.abs(B[:, i] - B[:, j]) ** p).mean(0)
+    va = np.empty(len(i)); vb = np.empty(len(i))
+    for c0 in range(0, len(i), chunk):
+        c1 = min(c0 + chunk, len(i))
+        ic, jc = i[c0:c1], j[c0:c1]
+        va[c0:c1] = (np.abs(A[:, ic] - A[:, jc]) ** p).mean(0)
+        vb[c0:c1] = (np.abs(B[:, ic] - B[:, jc]) ** p).mean(0)
     return float(((va - vb) ** 2).mean())
 
 
@@ -351,7 +402,7 @@ def pb_rel_err(pred_X, true_X):
     return float(np.linalg.norm(a - b) / nb) if nb > 0 else float("nan")
 
 
-def library_size_ratio(pred_X, true_X):
+def library_size_ratio(pred_X, true_X, batch=256):
     """Median implied library size of the submission over the target's — the normalisation-convention gate.
 
     The released data is log(1 + 1e4 * c / sum c), so `expm1(X).sum(1)` should be ~1e4. Nothing checked this:
@@ -360,13 +411,21 @@ def library_size_ratio(pred_X, true_X):
     silently scored on a different scale. An unchanged do-nothing submission could then score anywhere from
     0.000 to 0.358 on the old `de_score` purely by normalisation choice.
 
-    1.0 = the target's convention. The official scorer should reject a submission outside a stated band
-    rather than score it; here it is reported so the cause is named when `pb_rel_err` flags a scale problem.
+    Computed in `batch`-cell blocks so `clip`/`expm1` never materialise a full n_cells x G temporary; only
+    one scalar (library size) per cell is retained. Formula unchanged.
     """
-    a, b = to_dense(pred_X), to_dense(true_X)
-    la = float(np.median(np.expm1(np.clip(a, 0, 50)).sum(1)))
-    lb = float(np.median(np.expm1(np.clip(b, 0, 50)).sum(1)))
+    la = _median_library_size(pred_X, batch)
+    lb = _median_library_size(true_X, batch)
     return float(la / lb) if lb > 0 else float("nan")
+
+
+def _median_library_size(X, batch):
+    n = X.shape[0]; sizes = np.empty(n)
+    for b0 in range(0, n, batch):
+        b1 = min(b0 + batch, n)
+        chunk = _dense(X[b0:b1])
+        sizes[b0:b1] = np.expm1(np.clip(chunk, 0, 50)).sum(1)
+    return float(np.median(sizes))
 
 
 def variance_ratio(pred_X, true_X):
@@ -375,9 +434,22 @@ def variance_ratio(pred_X, true_X):
     A guard, not a score. A one-row submission broadcast to many cells scored `pseudobulk_pearson` exactly
     equal to the copy floor and `delta_pearson` exactly 1.0; anything far below ~0.1 here means the
     submission is not a population and its mean-based metrics should not be read as if it were.
+
+    Sparse uses Var = E[X^2] - E[X]^2 via two O(nnz) reductions (no densification). Both paths accumulate
+    in float64 so identical values score consistently regardless of storage format.
     """
-    va = float(to_dense(pred_X).var(0).mean()); vb = float(to_dense(true_X).var(0).mean())
+    va = _mean_gene_variance(pred_X); vb = _mean_gene_variance(true_X)
     return float(va / vb) if vb > 0 else float("nan")
+
+
+def _mean_gene_variance(X):
+    if sparse.issparse(X):
+        Xf = X.tocsr().astype(np.float64, copy=False)
+        mean = np.asarray(Xf.mean(axis=0)).ravel()
+        mean_sq = np.asarray(Xf.multiply(Xf).mean(axis=0)).ravel()
+        var = mean_sq - mean ** 2
+        return float(var.mean())
+    return float(np.asarray(X, dtype=np.float64).var(axis=0).mean())
 
 
 # ---------------------------------------------------------------- aggregation

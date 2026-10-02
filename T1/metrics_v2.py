@@ -23,21 +23,26 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from common.core_metrics import (de_score, de_direction, mmd_unbiased, energy_distance,
                                  variogram_score, pb_rel_err, variance_ratio,
-                                 library_size_ratio)
+                                 library_size_ratio, _log)
 from metrics import composition_jsd, train_frozen_probe, pseudobulk_pearson
 
 
 def score_task1_v2(pred_X, pred_ct, true_X, true_ct, ref_X, probe=None, seed=0):
     """Full Task-1 panel. `ref_X` = the preceding stage (the DE reference)."""
     if probe is None: probe = train_frozen_probe(true_X, true_ct)
-    de = de_score(pred_X, true_X, ref_X)
+    _log("computing de_score..."); de = de_score(pred_X, true_X, ref_X)
+    _log("computing de_direction..."); de_dir = de_direction(pred_X, true_X, ref_X)
+    _log("computing energy_distance..."); ed = energy_distance(pred_X, true_X, seed=seed)
+    _log("computing mmd_u..."); mmd = mmd_unbiased(pred_X, true_X, seed=seed)
+    _log("computing variogram..."); vg = variogram_score(pred_X, true_X, seed=seed)
+    _log("computing constraints...")
     return {
         # ---- primary ----
         "de_score":            round(de["score"], 4) if np.isfinite(de["score"]) else None,
-        "de_direction":        round(de_direction(pred_X, true_X, ref_X), 4),
-        "energy_distance":     round(energy_distance(pred_X, true_X, seed=seed), 5),
-        "mmd_u":               round(mmd_unbiased(pred_X, true_X, seed=seed), 5),
-        "variogram":           round(variogram_score(pred_X, true_X, seed=seed), 6),
+        "de_direction":        round(de_dir, 4),
+        "energy_distance":     round(ed, 5),
+        "mmd_u":               round(mmd, 5),
+        "variogram":           round(vg, 6),
         # ---- constraint ----
         "pb_rel_err":          round(pb_rel_err(pred_X, true_X), 4),
         "library_size_ratio":  round(library_size_ratio(pred_X, true_X), 3),

@@ -36,6 +36,8 @@ from __future__ import annotations
 import argparse
 import importlib.util
 import json
+import multiprocessing as mp
+import signal
 import sys
 import types
 from pathlib import Path
@@ -44,16 +46,26 @@ import anndata as ad
 import numpy as np
 from scipy import sparse
 
+from common.core_metrics import _log
+
 
 ROOT = Path(__file__).resolve().parent
 
 
 def _as_float32(X, name: str):
-    X = X.toarray() if sparse.issparse(X) else np.asarray(X)
-    X = X.astype(np.float32, copy=False)
+    """Convert to float32 while PRESERVING sparsity. The old version eagerly densified the whole
+    cells x genes matrix, which alone was ~2 GiB per file at T1's full 17k x 32k scale (and several copies
+    were held at once) -- the root of the OOM. Sparse stays sparse (CSR); only the stored nonzeros are
+    validated, never a dense full-matrix op."""
+    if sparse.issparse(X):
+        X = X.tocsr().astype(np.float32, copy=False)
+        values = X.data
+    else:
+        X = np.asarray(X, dtype=np.float32)
+        values = X
     if X.ndim != 2:
         raise ValueError(f"{name} must be a 2D cells x genes matrix, got shape {X.shape}")
-    if not np.isfinite(X).all():
+    if not np.isfinite(values).all():
         raise ValueError(f"{name} contains NaN or infinite values")
     return X
 
@@ -82,7 +94,10 @@ def _prediction(path: Path, genes, *, need_coords: bool, allow_reorder: bool):
             )
 
     X = _as_float32(a.X, "prediction.X")
-    if (X < 0).any():
+    # validate on stored nonzeros only; for sparse the implicit zeros are 0 (non-negative) so no full-matrix
+    # comparison is needed.
+    neg_vals = X.data if sparse.issparse(X) else X
+    if (neg_vals < 0).any():
         raise ValueError("prediction.X contains negative values; metrics expect log-normalized nonnegative data")
 
     ct = np.asarray(a.obs["celltype"]).astype(str) if "celltype" in a.obs else np.array(["NA"] * a.n_obs)
@@ -150,17 +165,90 @@ def _resolve_reference(args, ref_field: str, need_coords: bool):
     return X, C, ct, A, defaulted
 
 
+def _subprocess_ctx():
+    # `fork` lets the child inherit the already-loaded (sparse) matrices via copy-on-write, so no
+    # re-read or pickling of large arrays happens. Falls back to the platform default elsewhere.
+    if "fork" in mp.get_all_start_methods():
+        return mp.get_context("fork")
+    return mp.get_context()
+
+
+def _terminate(p):
+    if p.is_alive():
+        p.terminate()
+        p.join(timeout=10)
+    if p.is_alive():
+        p.kill()
+
+
+def _run_compute(fn, *args):
+    """Run `fn(*args)` in a child process and return its result.
+
+    The parent stays responsive to SIGINT/SIGTERM while the child is inside a potentially
+    uninterruptible native (sklearn/BLAS) call such as LogisticRegression.fit or PCA.fit: the parent
+    merely polls a pipe on a 0.2s cycle, so a signal is delivered to the Python main thread promptly, the
+    child is terminated/joined, and the KeyboardInterrupt / SystemExit is re-raised in the caller. This
+    changes execution isolation only -- never the function's math.
+    """
+    ctx = _subprocess_ctx()
+    parent_conn, child_conn = ctx.Pipe(duplex=False)
+
+    def _child():
+        try:
+            res = fn(*args)
+            child_conn.send(("ok", res))
+        except BaseException as exc:
+            try:
+                child_conn.send(("err", exc))
+            except BaseException:
+                pass
+        finally:
+            try:
+                child_conn.close()
+            except BaseException:
+                pass
+
+    p = ctx.Process(target=_child)
+    p.start()
+    status = payload = None
+    try:
+        while True:
+            if parent_conn.poll(0.2):
+                status, payload = parent_conn.recv()
+                break
+            if not p.is_alive():
+                raise RuntimeError("compute worker exited unexpectedly")
+    except BaseException:
+        _terminate(p)
+        raise
+    else:
+        _terminate(p)
+        if status == "ok":
+            return payload
+        raise payload
+    finally:
+        try:
+            parent_conn.close()
+        except BaseException:
+            pass
+
 def score_t1(args):
     metrics, metrics_v2 = _load_task_metrics("T1")
 
+    _log("loading reference...")
     ref_X, _, ref_ct, ref_A, ref_defaulted = _resolve_reference(args, "reference", need_coords=False)
     genes = [str(g) for g in ref_A.var_names]
+    _log("loading target...")
     true_X, _, true_ct, _ = _prediction(args.target, genes, need_coords=False,
                                         allow_reorder=args.allow_reorder)
-
-    probe = metrics.train_frozen_probe(true_X, true_ct)
+    _log("training frozen probe...")
+    probe = _run_compute(metrics.train_frozen_probe, true_X, true_ct)
+    _log("loading prediction...")
     pred_X, _, pred_ct, A = _prediction(args.input, genes, need_coords=False, allow_reorder=args.allow_reorder)
-    scores = metrics_v2.score_task1_v2(pred_X, pred_ct, true_X, true_ct, ref_X, probe=probe, seed=args.seed)
+    _log("computing metrics...")
+    scores = _run_compute(metrics_v2.score_task1_v2,
+                          pred_X, pred_ct, true_X, true_ct, ref_X, probe, args.seed)
+    _log("done")
     meta = {
         "task": "T1",
         "target_source": str(args.target),
@@ -175,16 +263,20 @@ def score_t1(args):
 def score_t2(args):
     metrics, metrics_v2 = _load_task_metrics("T2")
 
+    _log("loading reference...")
     ref_X, ref_C, ref_ct, ref_A, ref_defaulted = _resolve_reference(args, "reference", need_coords=True)
     genes = [str(g) for g in ref_A.var_names]
+    _log("loading target...")
     true_X, true_C, true_ct, _ = _prediction(args.target, genes, need_coords=True,
                                              allow_reorder=args.allow_reorder)
-
-    probe = metrics.train_frozen_probe(true_X, true_ct)
+    _log("training frozen probe...")
+    probe = _run_compute(metrics.train_frozen_probe, true_X, true_ct)
+    _log("loading prediction...")
     pred_X, pred_C, pred_ct, A = _prediction(args.input, genes, need_coords=True, allow_reorder=args.allow_reorder)
-    scores = metrics_v2.score_task2_v2(
-        pred_X, pred_C, pred_ct, true_X, true_C, true_ct, ref_X, probe=probe, seed=args.seed
-    )
+    _log("computing metrics...")
+    scores = _run_compute(metrics_v2.score_task2_v2,
+                          pred_X, pred_C, pred_ct, true_X, true_C, true_ct, ref_X, probe, args.seed)
+    _log("done")
     meta = {
         "task": "T2",
         "setting": args.setting,
@@ -200,16 +292,20 @@ def score_t2(args):
 def score_t3(args):
     metrics, metrics_v2 = _load_task_metrics("T3")
 
+    _log("loading wt...")
     wt_X, wt_C, wt_ct, wt_A, wt_defaulted = _resolve_reference(args, "wt", need_coords=True)
     genes = [str(g) for g in wt_A.var_names]
+    _log("loading target...")
     true_X, true_C, true_ct, _ = _prediction(args.target, genes, need_coords=True,
                                              allow_reorder=args.allow_reorder)
-
-    probe = metrics.train_frozen_probe(true_X, true_ct)
+    _log("training frozen probe...")
+    probe = _run_compute(metrics.train_frozen_probe, true_X, true_ct)
+    _log("loading prediction...")
     pred_X, pred_C, pred_ct, A = _prediction(args.input, genes, need_coords=True, allow_reorder=args.allow_reorder)
-    scores = metrics_v2.score_task3_v2(
-        pred_X, pred_C, pred_ct, true_X, true_C, true_ct, wt_X, probe=probe, seed=args.seed
-    )
+    _log("computing metrics...")
+    scores = _run_compute(metrics_v2.score_task3_v2,
+                          pred_X, pred_C, pred_ct, true_X, true_C, true_ct, wt_X, probe, args.seed)
+    _log("done")
     meta = {
         "task": "T3",
         "target_source": str(args.target),
@@ -219,6 +315,10 @@ def score_t3(args):
         "genes": len(genes),
     }
     return meta, scores
+
+
+def _on_sigterm(signum, frame):
+    raise SystemExit(143)
 
 
 def main():
@@ -242,12 +342,26 @@ def main():
                     help="T2 only: cosmetic, recorded in the output; doesn't change what's loaded")
     args = ap.parse_args()
 
-    if args.task == "T1":
-        meta, scores = score_t1(args)
-    elif args.task == "T2":
-        meta, scores = score_t2(args)
-    else:
-        meta, scores = score_t3(args)
+    # Interruptibility: SIGINT (Ctrl+C) raises KeyboardInterrupt (default); SIGTERM is mapped to a
+    # SystemExit(143) so the shell's conventional 128+15 code is preserved. Because the heavy native
+    # (sklearn/BLAS) work runs in isolated worker subprocesses (see `_run_compute`), the Python main thread
+    # stays responsive and these land promptly instead of waiting out a minutes-long native call.
+    signal.signal(signal.SIGTERM, _on_sigterm)
+    try:
+        if args.task == "T1":
+            meta, scores = score_t1(args)
+        elif args.task == "T2":
+            meta, scores = score_t2(args)
+        else:
+            meta, scores = score_t3(args)
+    except SystemExit as e:
+        code = e.code if isinstance(e.code, int) else (0 if e.code is None else 1)
+        if code == 143:
+            print("Terminated.", file=sys.stderr)
+        return code
+    except KeyboardInterrupt:
+        print("Interrupted.", file=sys.stderr)
+        return 130
 
     result = {"meta": meta, "metrics": scores}
     text = json.dumps(result, indent=2, ensure_ascii=False, default=str)
@@ -255,7 +369,7 @@ def main():
     if args.out:
         args.out.parent.mkdir(parents=True, exist_ok=True)
         args.out.write_text(text + "\n", encoding="utf-8")
-
+    return 0
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

@@ -23,9 +23,9 @@ from sklearn.pipeline import make_pipeline
 
 # ---- helpers ----
 def to_dense(X): return X.toarray() if sparse.issparse(X) else np.asarray(X)
-def pseudobulk(X): return np.asarray(to_dense(X).mean(0)).ravel()
+def pseudobulk(X): return np.asarray(X.mean(axis=0)).ravel()
 def ct_means(X, ct):
-    X = to_dense(X); return {c: X[ct == c].mean(0) for c in np.unique(ct)}
+    return {c: np.asarray(X[ct == c].mean(0)).ravel() for c in np.unique(ct)}
 
 # ---- gene-expression accuracy ----
 def pseudobulk_pearson(pred_X, true_X):
@@ -38,10 +38,16 @@ def pseudobulk_pearson_celltype(pred_X, pred_ct, true_X, true_ct):
     return (float(np.mean(rs)) if rs else float("nan"))
 
 def rbf_mmd(pred_X, true_X, n=2000, seed=0):
-    pred_X, true_X = to_dense(pred_X), to_dense(true_X); rng = np.random.default_rng(seed)
-    Z = PCA(n_components=30, random_state=0).fit(np.vstack([pred_X, true_X]))
-    A = Z.transform(pred_X[rng.choice(pred_X.shape[0], min(n, pred_X.shape[0]), replace=False)])
-    B = Z.transform(true_X[rng.choice(true_X.shape[0], min(n, true_X.shape[0]), replace=False)])
+    """Legacy RBF-MMD (biased, superseded by `mmd_unbiased`). Kept sparse-aware so the full matrix is never
+    densified; the PCA is still fit on the FULL stack (unchanged population/solver), rows are sampled sparse.
+    """
+    from scipy import sparse as _sp
+    rng = np.random.default_rng(seed)
+    P = pred_X.tocsr() if _sp.issparse(pred_X) else _sp.csr_matrix(pred_X)
+    T = true_X.tocsr() if _sp.issparse(true_X) else _sp.csr_matrix(true_X)
+    Z = PCA(n_components=30, random_state=0).fit(_sp.vstack([P, T]).tocsr())
+    A = Z.transform(P[rng.choice(P.shape[0], min(n, P.shape[0]), replace=False)])
+    B = Z.transform(T[rng.choice(T.shape[0], min(n, T.shape[0]), replace=False)])
     d2 = np.sum((A[:, None] - A[None, :]) ** 2, -1); gamma = 1.0 / (np.median(d2[d2 > 0]) + 1e-9)
     Kaa, Kbb, Kab = rbf_kernel(A, A, gamma), rbf_kernel(B, B, gamma), rbf_kernel(A, B, gamma)
     return float(Kaa.mean() + Kbb.mean() - 2 * Kab.mean())
@@ -63,16 +69,36 @@ def _jsd2(p, q, eps=1e-6):
     return float(0.5 * kl(p, m) + 0.5 * kl(q, m))
 
 def train_frozen_probe(target_X, target_ct, cap=60000, seed=0):
-    """A frozen cell-type classifier q(.) trained once on the target embryo (organizer side)."""
-    target_X = to_dense(target_X); rng = np.random.default_rng(seed); n = target_X.shape[0]
+    """A frozen cell-type classifier q(.) trained once on the target embryo (organizer side).
+
+    Sparse-safe: `target_X` stays CSR end to end (no densification). `StandardScaler(with_mean=False)` and
+    `LogisticRegression` both accept sparse input, so `target_X[idx]` is selected by sparse row indexing
+    rather than a full dense copy. The deprecated no-op `n_jobs=-1` is dropped (it no longer affects the
+    solver and only emitted a warning); solver / max_iter / seed semantics are unchanged."""
+    rng = np.random.default_rng(seed); n = target_X.shape[0]
     idx = rng.choice(n, min(cap, n), replace=False) if n > cap else np.arange(n)
-    clf = make_pipeline(StandardScaler(with_mean=False), LogisticRegression(max_iter=300, n_jobs=-1))
+    clf = make_pipeline(StandardScaler(with_mean=False), LogisticRegression(max_iter=300))
     clf.fit(target_X[idx], target_ct[idx]); return clf
 
-def composition_jsd(pred_X, probe, true_ct):
-    """Composition JSD: predicted proportions = mean soft q(x_hat); observed = target label fractions."""
+def composition_jsd(pred_X, probe, true_ct, chunk=2048):
+    """Composition JSD: predicted proportions = mean soft q(x_hat); observed = target label fractions.
+
+    `probe.predict_proba` accepts sparse CSR directly, but when `pred_X` is a DENSE submission the pipeline's
+    StandardScaler.transform would materialise a full n_cells x genes copy (~2 GiB at T1 scale) in one go.
+    So predict_proba is evaluated in `chunk`-cell blocks and only the running mean class-probability sum is
+    kept -- the result is the same mean over cells up to float accumulation order."""
     classes = probe.classes_
-    pi_hat = probe.predict_proba(to_dense(pred_X)).mean(0)
+    n = pred_X.shape[0]
+    if n == 0:
+        pi_hat = np.full(len(classes), np.nan)
+    elif n <= chunk:
+        pi_hat = probe.predict_proba(pred_X).mean(0)
+    else:
+        total = np.zeros(len(classes))
+        for c0 in range(0, n, chunk):
+            c1 = min(c0 + chunk, n)
+            total += probe.predict_proba(pred_X[c0:c1]).sum(0)
+        pi_hat = total / n
     u, cnt = np.unique(true_ct, return_counts=True); dd = dict(zip(u, cnt))
     pi_obs = np.array([dd.get(c, 0) for c in classes], float)
     return _jsd2(pi_obs, pi_hat)

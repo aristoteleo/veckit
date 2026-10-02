@@ -1,0 +1,6 @@
+# Binary formats that must never be text-processed, diffed, or line-ending-normalized by git.
+# h5ad (anndata) files are binary HDF5; marking them binary stops git from attempting merges/diffs
+# on them and from inflating the repository with spurious text deltas.
+*.h5ad    binary
+*.h5      binary
+*.hdf5    binary
