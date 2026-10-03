@@ -1,0 +1,706 @@
+{
+  "started_at": "2026-09-25T00:50:43.535754+08:00",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "python": "3.13.5",
+  "baseline_commit": "46d41e63f42a9aab815db20b742feeccd249cb17",
+  "source_sha256": "61db63808be6e745df9217dd4ff96423ccf7e2e1ef6d2dcc7863a0129cdcc3e9",
+  "versions": {
+    "numpy": "2.5.3",
+    "scipy": "1.18.1",
+    "scikit-learn": "1.9.1",
+    "anndata": "0.13.4",
+    "psutil": "7.2.2",
+    "threadpoolctl": "3.7.0"
+  },
+  "note": "Fresh process per run; full MMD time, process-wide peak. Stress resamples real public T2 cells, not independent observations.",
+  "runs": [
+    {
+      "case": "T1_public",
+      "arm": "baseline",
+      "score": 0.07716336101293564,
+      "seconds": 0.08140929997898638,
+      "peak_memory_bytes": 292786176,
+      "memory_measurement": "Windows peak process working set",
+      "original_shapes": [
+        [
+          150,
+          32285
+        ],
+        [
+          150,
+          32285
+        ]
+      ],
+      "evaluated_shapes": [
+        [
+          150,
+          32285
+        ],
+        [
+          150,
+          32285
+        ]
+      ],
+      "dtype": "float32",
+      "threads": 8,
+      "data_sha256": {
+        "sample_8.5.h5ad": "b914bae904384fa492d3b8e105cb408cb80ea6f45c20f4be836027a4c66e940f",
+        "sample_9.5.h5ad": "4b43eaef661b61ee65afebc88b89de5977ff4ebf5216cd8ec0bf0210917a71a0"
+      },
+      "repeat": 0
+    },
+    {
+      "case": "T1_public",
+      "arm": "candidate",
+      "score": 0.07716336101293564,
+      "seconds": 0.07845869997981936,
+      "peak_memory_bytes": 292278272,
+      "memory_measurement": "Windows peak process working set",
+      "original_shapes": [
+        [
+          150,
+          32285
+        ],
+        [
+          150,
+          32285
+        ]
+      ],
+      "evaluated_shapes": [
+        [
+          150,
+          32285
+        ],
+        [
+          150,
+          32285
+        ]
+      ],
+      "dtype": "float32",
+      "threads": 8,
+      "data_sha256": {
+        "sample_8.5.h5ad": "b914bae904384fa492d3b8e105cb408cb80ea6f45c20f4be836027a4c66e940f",
+        "sample_9.5.h5ad": "4b43eaef661b61ee65afebc88b89de5977ff4ebf5216cd8ec0bf0210917a71a0"
+      },
+      "repeat": 0
+    },
+    {
+      "case": "T2_public",
+      "arm": "baseline",
+      "score": 0.29036611318588257,
+      "seconds": 0.02084920008201152,
+      "peak_memory_bytes": 186601472,
+      "memory_measurement": "Windows peak process working set",
+      "original_shapes": [
+        [
+          150,
+          500
+        ],
+        [
+          150,
+          500
+        ]
+      ],
+      "evaluated_shapes": [
+        [
+          150,
+          500
+        ],
+        [
+          150,
+          500
+        ]
+      ],
+      "dtype": "float32",
+      "threads": 8,
+      "data_sha256": {
+        "sample_heart_9.25.h5ad": "90cc0ad7ce53d14545a142316891b561a49f51c373ecc3e1aefba4275272c132",
+        "sample_heart_9.5.h5ad": "714952899885e5fd6190393245e63210c561f8021d368abd34e7c97a929d1fce"
+      },
+      "repeat": 0
+    },
+    {
+      "case": "T2_public",
+      "arm": "candidate",
+      "score": 0.29036611318588257,
+      "seconds": 0.016283700009807944,
+      "peak_memory_bytes": 184291328,
+      "memory_measurement": "Windows peak process working set",
+      "original_shapes": [
+        [
+          150,
+          500
+        ],
+        [
+          150,
+          500
+        ]
+      ],
+      "evaluated_shapes": [
+        [
+          150,
+          500
+        ],
+        [
+          150,
+          500
+        ]
+      ],
+      "dtype": "float32",
+      "threads": 8,
+      "data_sha256": {
+        "sample_heart_9.25.h5ad": "90cc0ad7ce53d14545a142316891b561a49f51c373ecc3e1aefba4275272c132",
+        "sample_heart_9.5.h5ad": "714952899885e5fd6190393245e63210c561f8021d368abd34e7c97a929d1fce"
+      },
+      "repeat": 0
+    },
+    {
+      "case": "T2_resampled_2000",
+      "arm": "baseline",
+      "score": 0.2923145890235901,
+      "seconds": 0.485737600014545,
+      "peak_memory_bytes": 1152913408,
+      "memory_measurement": "Windows peak process working set",
+      "original_shapes": [
+        [
+          150,
+          500
+        ],
+        [
+          150,
+          500
+        ]
+      ],
+      "evaluated_shapes": [
+        [
+          2000,
+          500
+        ],
+        [
+          2000,
+          500
+        ]
+      ],
+      "dtype": "float32",
+      "threads": 8,
+      "data_sha256": {
+        "sample_heart_9.25.h5ad": "90cc0ad7ce53d14545a142316891b561a49f51c373ecc3e1aefba4275272c132",
+        "sample_heart_9.5.h5ad": "714952899885e5fd6190393245e63210c561f8021d368abd34e7c97a929d1fce"
+      },
+      "repeat": 0
+    },
+    {
+      "case": "T2_resampled_2000",
+      "arm": "candidate",
+      "score": 0.2923145890235901,
+      "seconds": 0.3040982000529766,
+      "peak_memory_bytes": 262819840,
+      "memory_measurement": "Windows peak process working set",
+      "original_shapes": [
+        [
+          150,
+          500
+        ],
+        [
+          150,
+          500
+        ]
+      ],
+      "evaluated_shapes": [
+        [
+          2000,
+          500
+        ],
+        [
+          2000,
+          500
+        ]
+      ],
+      "dtype": "float32",
+      "threads": 8,
+      "data_sha256": {
+        "sample_heart_9.25.h5ad": "90cc0ad7ce53d14545a142316891b561a49f51c373ecc3e1aefba4275272c132",
+        "sample_heart_9.5.h5ad": "714952899885e5fd6190393245e63210c561f8021d368abd34e7c97a929d1fce"
+      },
+      "repeat": 0
+    },
+    {
+      "case": "T1_public",
+      "arm": "candidate",
+      "score": 0.07716336101293564,
+      "seconds": 0.07580679992679507,
+      "peak_memory_bytes": 291934208,
+      "memory_measurement": "Windows peak process working set",
+      "original_shapes": [
+        [
+          150,
+          32285
+        ],
+        [
+          150,
+          32285
+        ]
+      ],
+      "evaluated_shapes": [
+        [
+          150,
+          32285
+        ],
+        [
+          150,
+          32285
+        ]
+      ],
+      "dtype": "float32",
+      "threads": 8,
+      "data_sha256": {
+        "sample_8.5.h5ad": "b914bae904384fa492d3b8e105cb408cb80ea6f45c20f4be836027a4c66e940f",
+        "sample_9.5.h5ad": "4b43eaef661b61ee65afebc88b89de5977ff4ebf5216cd8ec0bf0210917a71a0"
+      },
+      "repeat": 1
+    },
+    {
+      "case": "T1_public",
+      "arm": "baseline",
+      "score": 0.07716336101293564,
+      "seconds": 0.08019010000862181,
+      "peak_memory_bytes": 291905536,
+      "memory_measurement": "Windows peak process working set",
+      "original_shapes": [
+        [
+          150,
+          32285
+        ],
+        [
+          150,
+          32285
+        ]
+      ],
+      "evaluated_shapes": [
+        [
+          150,
+          32285
+        ],
+        [
+          150,
+          32285
+        ]
+      ],
+      "dtype": "float32",
+      "threads": 8,
+      "data_sha256": {
+        "sample_8.5.h5ad": "b914bae904384fa492d3b8e105cb408cb80ea6f45c20f4be836027a4c66e940f",
+        "sample_9.5.h5ad": "4b43eaef661b61ee65afebc88b89de5977ff4ebf5216cd8ec0bf0210917a71a0"
+      },
+      "repeat": 1
+    },
+    {
+      "case": "T2_public",
+      "arm": "candidate",
+      "score": 0.29036611318588257,
+      "seconds": 0.016549999942071736,
+      "peak_memory_bytes": 183881728,
+      "memory_measurement": "Windows peak process working set",
+      "original_shapes": [
+        [
+          150,
+          500
+        ],
+        [
+          150,
+          500
+        ]
+      ],
+      "evaluated_shapes": [
+        [
+          150,
+          500
+        ],
+        [
+          150,
+          500
+        ]
+      ],
+      "dtype": "float32",
+      "threads": 8,
+      "data_sha256": {
+        "sample_heart_9.25.h5ad": "90cc0ad7ce53d14545a142316891b561a49f51c373ecc3e1aefba4275272c132",
+        "sample_heart_9.5.h5ad": "714952899885e5fd6190393245e63210c561f8021d368abd34e7c97a929d1fce"
+      },
+      "repeat": 1
+    },
+    {
+      "case": "T2_public",
+      "arm": "baseline",
+      "score": 0.29036611318588257,
+      "seconds": 0.020319400005973876,
+      "peak_memory_bytes": 187650048,
+      "memory_measurement": "Windows peak process working set",
+      "original_shapes": [
+        [
+          150,
+          500
+        ],
+        [
+          150,
+          500
+        ]
+      ],
+      "evaluated_shapes": [
+        [
+          150,
+          500
+        ],
+        [
+          150,
+          500
+        ]
+      ],
+      "dtype": "float32",
+      "threads": 8,
+      "data_sha256": {
+        "sample_heart_9.25.h5ad": "90cc0ad7ce53d14545a142316891b561a49f51c373ecc3e1aefba4275272c132",
+        "sample_heart_9.5.h5ad": "714952899885e5fd6190393245e63210c561f8021d368abd34e7c97a929d1fce"
+      },
+      "repeat": 1
+    },
+    {
+      "case": "T2_resampled_2000",
+      "arm": "candidate",
+      "score": 0.2923145890235901,
+      "seconds": 0.2666553999297321,
+      "peak_memory_bytes": 262979584,
+      "memory_measurement": "Windows peak process working set",
+      "original_shapes": [
+        [
+          150,
+          500
+        ],
+        [
+          150,
+          500
+        ]
+      ],
+      "evaluated_shapes": [
+        [
+          2000,
+          500
+        ],
+        [
+          2000,
+          500
+        ]
+      ],
+      "dtype": "float32",
+      "threads": 8,
+      "data_sha256": {
+        "sample_heart_9.25.h5ad": "90cc0ad7ce53d14545a142316891b561a49f51c373ecc3e1aefba4275272c132",
+        "sample_heart_9.5.h5ad": "714952899885e5fd6190393245e63210c561f8021d368abd34e7c97a929d1fce"
+      },
+      "repeat": 1
+    },
+    {
+      "case": "T2_resampled_2000",
+      "arm": "baseline",
+      "score": 0.2923145890235901,
+      "seconds": 0.48631499998737127,
+      "peak_memory_bytes": 1153826816,
+      "memory_measurement": "Windows peak process working set",
+      "original_shapes": [
+        [
+          150,
+          500
+        ],
+        [
+          150,
+          500
+        ]
+      ],
+      "evaluated_shapes": [
+        [
+          2000,
+          500
+        ],
+        [
+          2000,
+          500
+        ]
+      ],
+      "dtype": "float32",
+      "threads": 8,
+      "data_sha256": {
+        "sample_heart_9.25.h5ad": "90cc0ad7ce53d14545a142316891b561a49f51c373ecc3e1aefba4275272c132",
+        "sample_heart_9.5.h5ad": "714952899885e5fd6190393245e63210c561f8021d368abd34e7c97a929d1fce"
+      },
+      "repeat": 1
+    },
+    {
+      "case": "T1_public",
+      "arm": "baseline",
+      "score": 0.07716336101293564,
+      "seconds": 0.08041930000763386,
+      "peak_memory_bytes": 292171776,
+      "memory_measurement": "Windows peak process working set",
+      "original_shapes": [
+        [
+          150,
+          32285
+        ],
+        [
+          150,
+          32285
+        ]
+      ],
+      "evaluated_shapes": [
+        [
+          150,
+          32285
+        ],
+        [
+          150,
+          32285
+        ]
+      ],
+      "dtype": "float32",
+      "threads": 8,
+      "data_sha256": {
+        "sample_8.5.h5ad": "b914bae904384fa492d3b8e105cb408cb80ea6f45c20f4be836027a4c66e940f",
+        "sample_9.5.h5ad": "4b43eaef661b61ee65afebc88b89de5977ff4ebf5216cd8ec0bf0210917a71a0"
+      },
+      "repeat": 2
+    },
+    {
+      "case": "T1_public",
+      "arm": "candidate",
+      "score": 0.07716336101293564,
+      "seconds": 0.07706769998185337,
+      "peak_memory_bytes": 292139008,
+      "memory_measurement": "Windows peak process working set",
+      "original_shapes": [
+        [
+          150,
+          32285
+        ],
+        [
+          150,
+          32285
+        ]
+      ],
+      "evaluated_shapes": [
+        [
+          150,
+          32285
+        ],
+        [
+          150,
+          32285
+        ]
+      ],
+      "dtype": "float32",
+      "threads": 8,
+      "data_sha256": {
+        "sample_8.5.h5ad": "b914bae904384fa492d3b8e105cb408cb80ea6f45c20f4be836027a4c66e940f",
+        "sample_9.5.h5ad": "4b43eaef661b61ee65afebc88b89de5977ff4ebf5216cd8ec0bf0210917a71a0"
+      },
+      "repeat": 2
+    },
+    {
+      "case": "T2_public",
+      "arm": "baseline",
+      "score": 0.29036611318588257,
+      "seconds": 0.02072749997023493,
+      "peak_memory_bytes": 187039744,
+      "memory_measurement": "Windows peak process working set",
+      "original_shapes": [
+        [
+          150,
+          500
+        ],
+        [
+          150,
+          500
+        ]
+      ],
+      "evaluated_shapes": [
+        [
+          150,
+          500
+        ],
+        [
+          150,
+          500
+        ]
+      ],
+      "dtype": "float32",
+      "threads": 8,
+      "data_sha256": {
+        "sample_heart_9.25.h5ad": "90cc0ad7ce53d14545a142316891b561a49f51c373ecc3e1aefba4275272c132",
+        "sample_heart_9.5.h5ad": "714952899885e5fd6190393245e63210c561f8021d368abd34e7c97a929d1fce"
+      },
+      "repeat": 2
+    },
+    {
+      "case": "T2_public",
+      "arm": "candidate",
+      "score": 0.29036611318588257,
+      "seconds": 0.016449499991722405,
+      "peak_memory_bytes": 184102912,
+      "memory_measurement": "Windows peak process working set",
+      "original_shapes": [
+        [
+          150,
+          500
+        ],
+        [
+          150,
+          500
+        ]
+      ],
+      "evaluated_shapes": [
+        [
+          150,
+          500
+        ],
+        [
+          150,
+          500
+        ]
+      ],
+      "dtype": "float32",
+      "threads": 8,
+      "data_sha256": {
+        "sample_heart_9.25.h5ad": "90cc0ad7ce53d14545a142316891b561a49f51c373ecc3e1aefba4275272c132",
+        "sample_heart_9.5.h5ad": "714952899885e5fd6190393245e63210c561f8021d368abd34e7c97a929d1fce"
+      },
+      "repeat": 2
+    },
+    {
+      "case": "T2_resampled_2000",
+      "arm": "baseline",
+      "score": 0.2923145890235901,
+      "seconds": 0.48740959994029254,
+      "peak_memory_bytes": 1153376256,
+      "memory_measurement": "Windows peak process working set",
+      "original_shapes": [
+        [
+          150,
+          500
+        ],
+        [
+          150,
+          500
+        ]
+      ],
+      "evaluated_shapes": [
+        [
+          2000,
+          500
+        ],
+        [
+          2000,
+          500
+        ]
+      ],
+      "dtype": "float32",
+      "threads": 8,
+      "data_sha256": {
+        "sample_heart_9.25.h5ad": "90cc0ad7ce53d14545a142316891b561a49f51c373ecc3e1aefba4275272c132",
+        "sample_heart_9.5.h5ad": "714952899885e5fd6190393245e63210c561f8021d368abd34e7c97a929d1fce"
+      },
+      "repeat": 2
+    },
+    {
+      "case": "T2_resampled_2000",
+      "arm": "candidate",
+      "score": 0.2923145890235901,
+      "seconds": 0.268396099912934,
+      "peak_memory_bytes": 263184384,
+      "memory_measurement": "Windows peak process working set",
+      "original_shapes": [
+        [
+          150,
+          500
+        ],
+        [
+          150,
+          500
+        ]
+      ],
+      "evaluated_shapes": [
+        [
+          2000,
+          500
+        ],
+        [
+          2000,
+          500
+        ]
+      ],
+      "dtype": "float32",
+      "threads": 8,
+      "data_sha256": {
+        "sample_heart_9.25.h5ad": "90cc0ad7ce53d14545a142316891b561a49f51c373ecc3e1aefba4275272c132",
+        "sample_heart_9.5.h5ad": "714952899885e5fd6190393245e63210c561f8021d368abd34e7c97a929d1fce"
+      },
+      "repeat": 2
+    }
+  ],
+  "summary": {
+    "T1_public": {
+      "medians": {
+        "baseline": {
+          "seconds": 0.08041930000763386,
+          "peak_memory_bytes": 292171776,
+          "score": 0.07716336101293564
+        },
+        "candidate": {
+          "seconds": 0.07706769998185337,
+          "peak_memory_bytes": 292139008,
+          "score": 0.07716336101293564
+        }
+      },
+      "speedup": 1.0434890366076797,
+      "memory_reduction": 0.00011215320127289097,
+      "absolute_score_difference": 0.0
+    },
+    "T2_public": {
+      "medians": {
+        "baseline": {
+          "seconds": 0.02072749997023493,
+          "peak_memory_bytes": 187039744,
+          "score": 0.29036611318588257
+        },
+        "candidate": {
+          "seconds": 0.016449499991722405,
+          "peak_memory_bytes": 184102912,
+          "score": 0.29036611318588257
+        }
+      },
+      "speedup": 1.260068693921716,
+      "memory_reduction": 0.015701646811492664,
+      "absolute_score_difference": 0.0
+    },
+    "T2_resampled_2000": {
+      "medians": {
+        "baseline": {
+          "seconds": 0.48631499998737127,
+          "peak_memory_bytes": 1153376256,
+          "score": 0.2923145890235901
+        },
+        "candidate": {
+          "seconds": 0.268396099912934,
+          "peak_memory_bytes": 262979584,
+          "score": 0.2923145890235901
+        }
+      },
+      "speedup": 1.8119302036994158,
+      "memory_reduction": 0.7719915052594944,
+      "absolute_score_difference": 0.0
+    }
+  },
+  "gate": "All score differences <=1e-7; stress peak reduction>=60%; no case >10% slower.",
+  "passed": true,
+  "wall_seconds": 28.498456400004216,
+  "source_lf_sha256": "bf826b2c90b82244486b5e366ef6eaa35626608f2678d69512fde96ce705b319",
+  "source_hash_note": "Raw measured-file hash and LF-normalized text hash; Git may normalize checkout line endings."
+}

@@ -52,6 +52,43 @@ baseline tables.
 definition, data you already had — so this only tells you the scoring pipeline runs and your submission
 format is valid, not how well you'll do on the real held-out target.
 
+## MMD performance check
+
+The multi-kernel MMD computes its median bandwidth in row blocks and reuses
+three squared-distance matrices across bandwidths. The PCA fit, sampling,
+bandwidth values and unbiased estimator are unchanged.
+
+From a source checkout:
+
+```bash
+python -m pip install -e '.[test,benchmark]'
+python -m pytest -q
+python -m benchmarks.benchmark_mmd --output mmd-local-results.json
+```
+
+The benchmark runs each method three times in fresh processes, alternating
+order and limiting BLAS to eight threads. It compares the complete MMD
+function, including PCA. Peak memory includes interpreter and import overhead.
+The frozen baseline is from commit `46d41e63f42a9aab815db20b742feeccd249cb17`.
+
+Recorded Windows / Python 3.13.5 medians in
+[`benchmarks/mmd-results.json`](benchmarks/mmd-results.json):
+
+| Input | Original time | Updated time | Original peak | Updated peak |
+|---|---:|---:|---:|---:|
+| Public T1 sample pair | 80.4 ms | 77.1 ms | 278.6 MiB | 278.6 MiB |
+| Public T2 heart sample pair | 20.7 ms | 16.4 ms | 178.4 MiB | 175.6 MiB |
+| T2 samples resampled to 2,000 cells each | 486.3 ms | 268.4 ms | 1,099.9 MiB | 250.8 MiB |
+
+All recorded scores are identical between implementations. Tests also compare
+float32 / float64, CSR / CSC / dense inputs, unequal cell counts, repeated
+cells, custom bandwidths, and the three real public sample pairs.
+
+The 2,000-cell case resamples the supplied 150-cell fixtures for a memory
+stress test; it is **not** 2,000 independent biological observations or a new
+prediction result. These are MMD measurements, not full scoring-pipeline
+speedups. Small inputs are dominated by PCA/import costs and save little memory.
+
 ## More
 
 Full task definitions and metric rationale: [virtualembryo.ai](https://virtualembryo.ai) and
