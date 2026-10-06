@@ -65,8 +65,9 @@ def morans_I_profile(X, coords, k=15, n_genes=200, seed=0, genes=None):
     with w_ij = 1 if j is among the k nearest spatial neighbours of i (row-normalized here)."""
     from sklearn.neighbors import NearestNeighbors
     X = to_dense(X); N = X.shape[0]
-    _, idx = NearestNeighbors(n_neighbors=k + 1).fit(coords).kneighbors(coords)
-    idx = idx[:, 1:]                                                  # drop self
+    # Omitting X makes sklearn exclude each query row by index, even when
+    # coincident coordinates mean the query is not the first distance tie.
+    _, idx = NearestNeighbors(n_neighbors=k).fit(coords).kneighbors()
     if genes is None:                                                 # caller must pass a FIXED gene set
         genes = np.argsort(-X.var(0))[:n_genes]
     Z = X[:, genes] - X[:, genes].mean(0)                             # centred
