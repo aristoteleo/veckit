@@ -15,6 +15,9 @@ dependencies = [
     "scikit-learn",
 ]
 
+[project.optional-dependencies]
+test = ["pytest"]
+
 [project.urls]
 Homepage = "https://github.com/aristoteleo/veckit"
 Challenge = "https://virtualembryo.ai"
