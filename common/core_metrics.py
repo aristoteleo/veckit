@@ -354,11 +354,14 @@ def pb_rel_err(pred_X, true_X):
 def library_size_ratio(pred_X, true_X):
     """Median implied library size of the submission over the target's — the normalisation-convention gate.
 
-    The released data is log(1 + 1e4 * c / sum c), so `expm1(X).sum(1)` should be ~1e4. Nothing checked this:
-    `data.py::_needs_norm` only renormalises *integer count* matrices, so a submission log-normalised to
-    target_sum = 1e6 instead of 1e4 -- a uniform +log(100) offset on every entry -- was accepted as-is and
-    silently scored on a different scale. An unchanged do-nothing submission could then score anywhere from
-    0.000 to 0.358 on the old `de_score` purely by normalisation choice.
+    The released data is log(1 + 1e4 * c / sum c), so `expm1(X).sum(1)` should be ~1e4. Nothing checked this.
+    The scoring path (`score_h5ad.py` and the evaluation server) never renormalises a submission: it is scored
+    as submitted, so a raw-count matrix is scored as if it were already log-normalised. (`data.py::_needs_norm`
+    in the baseline data loaders renormalises *integer count* matrices, but it is a data-loading helper, not
+    part of scoring.) A submission log-normalised to target_sum = 1e6 instead of 1e4 -- a uniform +log(100)
+    offset on every entry -- was therefore accepted as-is and silently scored on a different scale. An
+    unchanged do-nothing submission could then score anywhere from 0.000 to 0.358 on the old `de_score`
+    purely by normalisation choice.
 
     1.0 = the target's convention. The official scorer should reject a submission outside a stated band
     rather than score it; here it is reported so the cause is named when `pb_rel_err` flags a scale problem.
