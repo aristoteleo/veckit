@@ -1,0 +1,81 @@
+{
+  "scope": "JSON serialization only; raw Python metric values retain their numerical semantics",
+  "python": "3.11.16",
+  "platform": "macOS-27.0.1-arm64-arm-64bit",
+  "source_sha256": {
+    "score_h5ad.py": "52034554f03aec10193cb09baa2c78a1de04218ef678f327eb63acc58fa28add",
+    "veckit.py": "b991dc27e1b169b732721f4d79ff183c29879f6c4fee9ceb7e897a63172b4108"
+  },
+  "cases": [
+    {
+      "task": "T1",
+      "mode": "normal",
+      "api": {
+        "strict_json": true,
+        "null_metrics": []
+      },
+      "raw_nonfinite_metrics": [],
+      "cli": {
+        "strict_json": true,
+        "null_metrics": []
+      },
+      "cli_exit_code": 0,
+      "cli_stdout_matches_file": true,
+      "input_files_unchanged": true
+    },
+    {
+      "task": "T1",
+      "mode": "constant_expression",
+      "api": {
+        "strict_json": false,
+        "error": "non-JSON numeric token: NaN"
+      },
+      "raw_nonfinite_metrics": [
+        "pseudobulk_pearson"
+      ],
+      "cli": {
+        "strict_json": false,
+        "error": "non-JSON numeric token: NaN"
+      },
+      "cli_exit_code": 0,
+      "cli_stdout_matches_file": true,
+      "input_files_unchanged": true
+    },
+    {
+      "task": "T2",
+      "mode": "collapsed_coordinates",
+      "api": {
+        "strict_json": false,
+        "error": "non-JSON numeric token: NaN"
+      },
+      "raw_nonfinite_metrics": [
+        "scale_log_ratio"
+      ],
+      "cli": {
+        "strict_json": false,
+        "error": "non-JSON numeric token: NaN"
+      },
+      "cli_exit_code": 0,
+      "cli_stdout_matches_file": true,
+      "input_files_unchanged": true
+    },
+    {
+      "task": "T3",
+      "mode": "collapsed_coordinates",
+      "api": {
+        "strict_json": false,
+        "error": "non-JSON numeric token: NaN"
+      },
+      "raw_nonfinite_metrics": [
+        "scale_log_ratio"
+      ],
+      "cli": {
+        "strict_json": false,
+        "error": "non-JSON numeric token: NaN"
+      },
+      "cli_exit_code": 0,
+      "cli_stdout_matches_file": true,
+      "input_files_unchanged": true
+    }
+  ]
+}

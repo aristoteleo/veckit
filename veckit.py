@@ -33,8 +33,9 @@ def score(task: str, input, target, **kw) -> dict:
     for the pseudo target. `reference` (T1/T2) / `wt` (T3) is the DE/shift baseline's reference
     expression; omit it to default to `input` itself (correct only when testing a no-change baseline like
     copy_last/wt_identity -- pass a real one for a real model's `de_score`/`de_direction`/`severity_slope`
-    to be meaningful). Returns {"meta": ..., "metrics": ...} -- the exact dict the `veckit` CLI prints as
-    JSON. Unknown kwargs raise TypeError, so a typo'd flag name fails loudly instead of being silently
+    to be meaningful). Returns {"meta": ..., "metrics": ...} with numeric metric values. Undefined
+    values remain NaN/infinity in memory and are encoded as null in CLI/API JSON reports.
+    Unknown kwargs raise TypeError, so a typo'd flag name fails loudly instead of being silently
     ignored."""
     if task not in ("T1", "T2", "T3"):
         raise ValueError(f"task must be 'T1'/'T2'/'T3', got {task!r}")
@@ -52,8 +53,6 @@ def score(task: str, input, target, **kw) -> dict:
     meta, scores = {"T1": _s.score_t1, "T2": _s.score_t2, "T3": _s.score_t3}[task](args)
     result = {"meta": meta, "metrics": scores}
     if args.out:
-        import json
         args.out.parent.mkdir(parents=True, exist_ok=True)
-        args.out.write_text(json.dumps(result, indent=2, ensure_ascii=False, default=str) + "\n",
-                            encoding="utf-8")
+        args.out.write_text(_s._result_json(result) + "\n", encoding="utf-8")
     return result

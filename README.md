@@ -1,5 +1,7 @@
 # veckit
 
+> **Community contribution on this branch:** [Strict JSON reports for undefined metric values](docs/strict-json/README.md) — patch, reproducible evidence, and tests.
+
 Local scorer for the [Virtual Embryo Challenge](https://virtualembryo.ai): score a submitted `.h5ad`
 against the T1/T2/T3 metric panels, entirely offline, against reference files **you** supply. This package
 never reads the official (held-out) validation/test data, and never imports anything that names where that

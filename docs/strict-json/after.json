@@ -1,0 +1,93 @@
+{
+  "scope": "JSON serialization only; raw Python metric values retain their numerical semantics",
+  "python": "3.11.16",
+  "platform": "macOS-27.0.1-arm64-arm-64bit",
+  "source_sha256": {
+    "score_h5ad.py": "43260aa9add9c358f3496e7fa5cf2d8d2ea87d899ec4da33259abddfcb786e93",
+    "veckit.py": "809b25a186582188749695f5adf83924ab4758ae41fcadeb7660ae82d56bec8e"
+  },
+  "cases": [
+    {
+      "task": "T1",
+      "mode": "normal",
+      "api": {
+        "strict_json": true,
+        "null_metrics": []
+      },
+      "raw_nonfinite_metrics": [],
+      "cli": {
+        "strict_json": true,
+        "null_metrics": []
+      },
+      "cli_exit_code": 0,
+      "cli_stdout_matches_file": true,
+      "input_files_unchanged": true
+    },
+    {
+      "task": "T1",
+      "mode": "constant_expression",
+      "api": {
+        "strict_json": true,
+        "null_metrics": [
+          "pseudobulk_pearson"
+        ]
+      },
+      "raw_nonfinite_metrics": [
+        "pseudobulk_pearson"
+      ],
+      "cli": {
+        "strict_json": true,
+        "null_metrics": [
+          "pseudobulk_pearson"
+        ]
+      },
+      "cli_exit_code": 0,
+      "cli_stdout_matches_file": true,
+      "input_files_unchanged": true
+    },
+    {
+      "task": "T2",
+      "mode": "collapsed_coordinates",
+      "api": {
+        "strict_json": true,
+        "null_metrics": [
+          "scale_log_ratio"
+        ]
+      },
+      "raw_nonfinite_metrics": [
+        "scale_log_ratio"
+      ],
+      "cli": {
+        "strict_json": true,
+        "null_metrics": [
+          "scale_log_ratio"
+        ]
+      },
+      "cli_exit_code": 0,
+      "cli_stdout_matches_file": true,
+      "input_files_unchanged": true
+    },
+    {
+      "task": "T3",
+      "mode": "collapsed_coordinates",
+      "api": {
+        "strict_json": true,
+        "null_metrics": [
+          "scale_log_ratio"
+        ]
+      },
+      "raw_nonfinite_metrics": [
+        "scale_log_ratio"
+      ],
+      "cli": {
+        "strict_json": true,
+        "null_metrics": [
+          "scale_log_ratio"
+        ]
+      },
+      "cli_exit_code": 0,
+      "cli_stdout_matches_file": true,
+      "input_files_unchanged": true
+    }
+  ]
+}

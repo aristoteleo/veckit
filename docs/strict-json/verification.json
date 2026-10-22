@@ -1,0 +1,47 @@
+{
+  "baseline_commit": "cc3859ab2a2305efc4544815d3f44f660efa77d4",
+  "branch": "fix/strict-json-results",
+  "python": "3.11.16",
+  "platform": "macOS-27.0.1-arm64-arm-64bit",
+  "dependencies": {
+    "numpy": "2.4.6",
+    "scipy": "1.17.1",
+    "anndata": "0.12.19",
+    "scikit-learn": "1.9.1",
+    "pandas": "2.3.3",
+    "pytest": "9.1.1"
+  },
+  "tests": {
+    "command": "python -m pytest tests -q",
+    "passed": 19,
+    "new_tests": 15,
+    "existing_tests": 4
+  },
+  "wheel_validation": {
+    "branch": "strict-json",
+    "wheel_built": true,
+    "installed_outside_source": true,
+    "checks": [
+      {
+        "task": "T1",
+        "api_cli_equal": true,
+        "metric_count": 15
+      },
+      {
+        "task": "T2",
+        "api_cli_equal": true,
+        "metric_count": 23
+      },
+      {
+        "task": "T3",
+        "api_cli_equal": true,
+        "metric_count": 24
+      }
+    ]
+  },
+  "source_sha256": {
+    "score_h5ad.py": "43260aa9add9c358f3496e7fa5cf2d8d2ea87d899ec4da33259abddfcb786e93",
+    "veckit.py": "809b25a186582188749695f5adf83924ab4758ae41fcadeb7660ae82d56bec8e"
+  },
+  "scope": "Public local scorer, synthetic fixtures; no hosted leaderboard claim"
+}

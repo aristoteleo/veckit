@@ -48,6 +48,26 @@ from scipy import sparse
 ROOT = Path(__file__).resolve().parent
 
 
+def _result_json(result):
+    """Encode reports as strict JSON, representing undefined numeric values as null.
+
+    Keep the caller's numeric result untouched: Python users can still inspect NaN
+    and infinities in memory. Normal finite values and metadata retain their existing
+    representation. Both the CLI and the Python API use this output boundary.
+    """
+    def json_safe(value):
+        if isinstance(value, dict):
+            return {key: json_safe(item) for key, item in value.items()}
+        if isinstance(value, (list, tuple)):
+            return [json_safe(item) for item in value]
+        if isinstance(value, (float, np.floating)) and not np.isfinite(value):
+            return None
+        return value
+
+    return json.dumps(json_safe(result), indent=2, ensure_ascii=False,
+                      allow_nan=False, default=str)
+
+
 def _as_float32(X, name: str):
     X = X.toarray() if sparse.issparse(X) else np.asarray(X)
     X = X.astype(np.float32, copy=False)
@@ -250,7 +270,7 @@ def main():
         meta, scores = score_t3(args)
 
     result = {"meta": meta, "metrics": scores}
-    text = json.dumps(result, indent=2, ensure_ascii=False, default=str)
+    text = _result_json(result)
     print(text)
     if args.out:
         args.out.parent.mkdir(parents=True, exist_ok=True)
