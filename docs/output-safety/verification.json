@@ -1,0 +1,21 @@
+{
+  "upstream_commit": "cc3859ab2a2305efc4544815d3f44f660efa77d4",
+  "verification_date": "2026-10-23",
+  "timezone": "Asia/Shanghai",
+  "platform": "macOS arm64",
+  "python": "3.11.16",
+  "packages": {
+    "veckit": "0.1.1",
+    "anndata": "0.12.19",
+    "numpy": "2.4.6",
+    "scipy": "1.17.1",
+    "scikit-learn": "1.9.1"
+  },
+  "full_suite_command": "python -m pytest tests -q",
+  "full_suite_result": "57 passed, 6 warnings in 2.14s",
+  "focused_suite_before": "36 failed, 14 passed in 0.86s",
+  "focused_suite_after": "50 passed in 0.78s",
+  "reproduction_before_command": "python examples/reproduce_output_collision.py --expect vulnerable",
+  "reproduction_after_command": "python examples/reproduce_output_collision.py --expect protected",
+  "data": "New tests and reproduction use generated synthetic arrays only; existing upstream shape tests use the upstream bundled sample."
+}

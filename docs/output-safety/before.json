@@ -1,0 +1,28 @@
+{
+  "python": "3.11.16",
+  "packages": {
+    "veckit": "0.1.1",
+    "anndata": "0.12.19",
+    "numpy": "2.4.6",
+    "scipy": "1.17.1",
+    "scikit-learn": "1.9.1"
+  },
+  "results": [
+    {
+      "interface": "api",
+      "sha256_before": "089d7bfc2727b7cbdaa665b41f6719057a71f43573f1705f5f686d522307cbd3",
+      "sha256_after": "3838233c71ee3d9b8dfe14979404d26810744ddb483be498cac7146e6f19bafd",
+      "unchanged": false,
+      "h5ad_readable": false,
+      "error": null
+    },
+    {
+      "interface": "cli",
+      "sha256_before": "089d7bfc2727b7cbdaa665b41f6719057a71f43573f1705f5f686d522307cbd3",
+      "sha256_after": "26c507cae4f566b23288d29fc7d361eff10115d3e54115b6b90927bc92b44811",
+      "unchanged": false,
+      "h5ad_readable": false,
+      "error": null
+    }
+  ]
+}

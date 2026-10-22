@@ -1,0 +1,28 @@
+{
+  "python": "3.11.16",
+  "packages": {
+    "veckit": "0.1.1",
+    "anndata": "0.12.19",
+    "numpy": "2.4.6",
+    "scipy": "1.17.1",
+    "scikit-learn": "1.9.1"
+  },
+  "results": [
+    {
+      "interface": "api",
+      "sha256_before": "089d7bfc2727b7cbdaa665b41f6719057a71f43573f1705f5f686d522307cbd3",
+      "sha256_after": "089d7bfc2727b7cbdaa665b41f6719057a71f43573f1705f5f686d522307cbd3",
+      "unchanged": true,
+      "h5ad_readable": true,
+      "error": "ValueError: Output path '<temporary-directory>/api/prediction.h5ad' refers to --input '<temporary-directory>/api/prediction.h5ad'. Choose a separate JSON result file; input data must not be overwritten."
+    },
+    {
+      "interface": "cli",
+      "sha256_before": "089d7bfc2727b7cbdaa665b41f6719057a71f43573f1705f5f686d522307cbd3",
+      "sha256_after": "089d7bfc2727b7cbdaa665b41f6719057a71f43573f1705f5f686d522307cbd3",
+      "unchanged": true,
+      "h5ad_readable": true,
+      "error": "ValueError: Output path '<temporary-directory>/cli/prediction.h5ad' refers to --input '<temporary-directory>/cli/prediction.h5ad'. Choose a separate JSON result file; input data must not be overwritten."
+    }
+  ]
+}

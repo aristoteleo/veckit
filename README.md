@@ -56,3 +56,14 @@ format is valid, not how well you'll do on the real held-out target.
 
 Full task definitions and metric rationale: [virtualembryo.ai](https://virtualembryo.ai) and
 [aristoteleo/virtualembryo](https://github.com/aristoteleo/virtualembryo).
+
+## Output-file protection in this community patch
+
+This branch rejects `--out` / `score(..., out=...)` paths that refer to the supplied input,
+target, reference or wild-type file, including relative, symbolic-link and hard-link aliases.
+Use a separate JSON file such as `results/task1.json`. Existing, distinct report files can
+still be replaced. Metric calculations are unchanged.
+
+See [the patch report and synthetic reproduction](docs/output-safety/README.md) for the
+before/after evidence, installation commands, tests and limitations. This is a community
+patch to the public local scorer, not an official released version or a leaderboard result.

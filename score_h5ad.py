@@ -48,6 +48,34 @@ from scipy import sparse
 ROOT = Path(__file__).resolve().parent
 
 
+def _validate_output_path(args):
+    """Reject JSON output that would overwrite any explicitly supplied data file.
+
+    Resolve relative paths and symlinks, and compare existing files by identity
+    to catch hard links as well. Call before scoring and again before writing:
+    a long scoring run may outlive a change to the output path.
+    """
+    if args.out is None:
+        return
+    out = Path(args.out)
+    for field in ("input", "target", "reference", "wt"):
+        value = getattr(args, field, None)
+        if value is None:
+            continue
+        source = Path(value)
+        same = out.resolve() == source.resolve()
+        if not same:
+            try:
+                same = out.samefile(source)
+            except FileNotFoundError:
+                same = False
+        if same:
+            raise ValueError(
+                f"Output path {str(out)!r} refers to --{field} {str(source)!r}. "
+                "Choose a separate JSON result file; input data must not be overwritten."
+            )
+
+
 def _as_float32(X, name: str):
     X = X.toarray() if sparse.issparse(X) else np.asarray(X)
     X = X.astype(np.float32, copy=False)
@@ -241,6 +269,7 @@ def main():
     ap.add_argument("--setting", default="heart", choices=["heart", "embryo"],
                     help="T2 only: cosmetic, recorded in the output; doesn't change what's loaded")
     args = ap.parse_args()
+    _validate_output_path(args)
 
     if args.task == "T1":
         meta, scores = score_t1(args)
@@ -253,6 +282,7 @@ def main():
     text = json.dumps(result, indent=2, ensure_ascii=False, default=str)
     print(text)
     if args.out:
+        _validate_output_path(args)
         args.out.parent.mkdir(parents=True, exist_ok=True)
         args.out.write_text(text + "\n", encoding="utf-8")
 

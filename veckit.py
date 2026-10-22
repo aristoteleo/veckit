@@ -48,10 +48,12 @@ def score(task: str, input, target, **kw) -> dict:
         if fields[name] is not None:
             fields[name] = Path(fields[name])
     args = Namespace(**fields)
+    _s._validate_output_path(args)
 
     meta, scores = {"T1": _s.score_t1, "T2": _s.score_t2, "T3": _s.score_t3}[task](args)
     result = {"meta": meta, "metrics": scores}
     if args.out:
+        _s._validate_output_path(args)
         import json
         args.out.parent.mkdir(parents=True, exist_ok=True)
         args.out.write_text(json.dumps(result, indent=2, ensure_ascii=False, default=str) + "\n",
