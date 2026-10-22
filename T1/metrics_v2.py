@@ -17,14 +17,11 @@
 Removed: `rbf_mmd` (biased estimator, replaced by `mmd_u`). See ../METRICS_V2.md and common/core_metrics.py.
 """
 from __future__ import annotations
-import sys
-from pathlib import Path
 import numpy as np
-sys.path.insert(0, str(Path(__file__).parent.parent))
 from common.core_metrics import (de_score, de_direction, mmd_unbiased, energy_distance,
                                  variogram_score, pb_rel_err, variance_ratio,
                                  library_size_ratio)
-from metrics import composition_jsd, train_frozen_probe, pseudobulk_pearson
+from .metrics import composition_jsd, train_frozen_probe, pseudobulk_pearson
 
 
 def score_task1_v2(pred_X, pred_ct, true_X, true_ct, ref_X, probe=None, seed=0):

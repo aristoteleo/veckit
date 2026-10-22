@@ -34,10 +34,9 @@ Also installable (`pip install git+https://github.com/aristoteleo/vec_baselines.
 from __future__ import annotations
 
 import argparse
-import importlib.util
+import importlib
 import json
 import sys
-import types
 from pathlib import Path
 
 import anndata as ad
@@ -100,37 +99,17 @@ def _prediction(path: Path, genes, *, need_coords: bool, allow_reorder: bool):
     return X, C, ct, a
 
 
-def _load_module(name: str, path: Path):
-    spec = importlib.util.spec_from_file_location(name, str(path))
-    m = importlib.util.module_from_spec(spec)
-    sys.modules[name] = m
-    spec.loader.exec_module(m)
-    return m
-
-
 def _load_task_metrics(task: str):
-    """Load `{task}/metrics.py` and `{task}/metrics_v2.py` WITHOUT ever touching any task's `data.py`.
+    """Import task-qualified metric modules without modifying generic module aliases.
 
-    T2's and T3's own `metrics.py` pull T1's (and, for T3, T2's) canonical functions via `from _reuse
-    import t1_metrics[, t2_metrics]` -- but the real `_reuse.py` ALSO eagerly loads `data.py` as an
-    (unused, by metrics.py) side effect, and this package must not import that file at all, not even for
-    its inert path strings. So instead of the real `_reuse.py`, this registers a clean stand-in under
-    that name holding only what `metrics.py` actually needs, sourced straight from `T1/metrics.py` (and
-    `T2/metrics.py` for T3) -- both confirmed to contain zero references to Sherlock/Oak paths.
+    Normal package imports use Python's per-module import locks, so mixed tasks can
+    be loaded concurrently. The task packages contain only metric modules and do not
+    import any data loader; no task's data.py or legacy _reuse module is involved.
     """
-    for name in ("_reuse", "metrics", "metrics_v2"):
-        sys.modules.pop(name, None)
-
-    t1_metrics = _load_module("t1_metrics", ROOT / "T1" / "metrics.py")
-    reuse = types.ModuleType("_reuse")
-    reuse.t1_metrics = t1_metrics
-    sys.modules["_reuse"] = reuse   # register BEFORE loading t2_metrics, which itself needs _reuse.t1_metrics
-    if task in ("T2", "T3"):
-        reuse.t2_metrics = _load_module("t2_metrics", ROOT / "T2" / "metrics.py")
-
-    metrics = t1_metrics if task == "T1" else _load_module("metrics", ROOT / task / "metrics.py")
-    sys.modules["metrics"] = metrics
-    metrics_v2 = _load_module("metrics_v2", ROOT / task / "metrics_v2.py")
+    if task not in ("T1", "T2", "T3"):
+        raise ValueError(f"task must be 'T1'/'T2'/'T3', got {task!r}")
+    metrics = importlib.import_module(f"{task}.metrics")
+    metrics_v2 = importlib.import_module(f"{task}.metrics_v2")
     return metrics, metrics_v2
 
 

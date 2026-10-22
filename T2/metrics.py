@@ -7,7 +7,7 @@ The expression / composition metrics are reused from Task 1.
 """
 from __future__ import annotations
 import numpy as np
-from _reuse import t1_metrics
+from T1 import metrics as t1_metrics
 pseudobulk_pearson, pseudobulk_pearson_celltype = t1_metrics.pseudobulk_pearson, t1_metrics.pseudobulk_pearson_celltype
 composition_jsd, rbf_mmd, deg_recovery = t1_metrics.composition_jsd, t1_metrics.rbf_mmd, t1_metrics.deg_recovery
 train_frozen_probe, to_dense = t1_metrics.train_frozen_probe, t1_metrics.to_dense
@@ -35,9 +35,6 @@ def neighborhood_mmd(pred_X, pred_coords, true_X, true_coords, k=15, n=2000):
     PREDICTION, so a submission could bend the space it was scored in and inflating its variance drove the
     score toward 0. The v2 estimator fits both on the observed cells only and drops the kernel diagonals.
     """
-    import sys
-    from pathlib import Path
-    sys.path.insert(0, str(Path(__file__).parent.parent))
     from common.core_metrics import mmd_unbiased
     return mmd_unbiased(_knn_neighborhood_pb(pred_X, pred_coords, k),
                         _knn_neighborhood_pb(true_X, true_coords, k), n=n)

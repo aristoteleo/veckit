@@ -1,0 +1,56 @@
+{
+  "baseline_commit": "cc3859ab2a2305efc4544815d3f44f660efa77d4",
+  "branch": "fix/task-module-isolation",
+  "python": "3.11.16",
+  "platform": "macOS-27.0.1-arm64-arm-64bit",
+  "dependencies": {
+    "numpy": "2.4.6",
+    "scipy": "1.17.1",
+    "anndata": "0.12.19",
+    "scikit-learn": "1.9.1",
+    "pandas": "2.3.3",
+    "pytest": "9.1.1"
+  },
+  "tests": {
+    "command": "python -m pytest tests -q",
+    "passed": 10,
+    "new_tests": 6,
+    "existing_tests": 4
+  },
+  "wheel_validation": {
+    "branch": "task-isolation",
+    "wheel_built": true,
+    "installed_outside_source": true,
+    "checks": [
+      {
+        "task": "T1",
+        "api_cli_equal": true,
+        "metric_count": 15
+      },
+      {
+        "task": "T2",
+        "api_cli_equal": true,
+        "metric_count": 23
+      },
+      {
+        "task": "T3",
+        "api_cli_equal": true,
+        "metric_count": 24
+      }
+    ]
+  },
+  "source_sha256": {
+    "score_h5ad.py": "4c25ab72ca5253a087e70b09fca6878ae4c92ec0bd251759ec40c351dc97c0e8",
+    "veckit.py": "cf3c3079acf1d55f33242d96c39259b0a1a8d09644474fc9f547243325e94340",
+    "T1/__init__.py": "d26f1454ed768873571b65751db6fcb9edd6551ed0189c9e2b516fe443a75160",
+    "T1/metrics.py": "c6252f964e782b4bb20f8b66352eb43ee244de402dafea5d3a0864ad5ed2fab8",
+    "T1/metrics_v2.py": "a8120a36a99fe52f45a8aba54aa02973aff77fc68921f7e714313cb8edfac84a",
+    "T2/__init__.py": "19ec9d505127a9451aa2d12db4b07e452e4deb28fb9daa097610c8fc2123f380",
+    "T2/metrics.py": "01b7cf3806bfafda5110a3d47341aa32ba050df10e67b825639a589ffe71a084",
+    "T2/metrics_v2.py": "c692b53b106ac19d9a6fe2296c1fa40e05f77d10bd8245ead54d94b6ed9bd0c0",
+    "T3/__init__.py": "7a16181f533a95d738e73255c8f7778913645ee3f60478b4ffef3d63a2d35bde",
+    "T3/metrics.py": "a2a5b2eefd8752ad6448fc3141c4af55a1b6ddd92f3e58f8b248201cd52e04fa",
+    "T3/metrics_v2.py": "8e385144315de7733d7b46680dc9c4d8fd4eecd188d30953e00a0e076532a52f"
+  },
+  "scope": "Public local scorer, synthetic fixtures; no hosted leaderboard claim"
+}

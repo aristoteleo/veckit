@@ -1,7 +1,7 @@
 """veckit -- Virtual Embryo Challenge local scorer: score a submitted .h5ad against the T1/T2/T3 metric
 panels entirely offline, against reference files YOU supply. This package NEVER imports T1/T2/T3's
-`data.py` (real Sherlock/Oak paths to the held-out validation/test data) -- see score_h5ad.py's
-`_load_task_metrics` for how that's structurally guaranteed, not just a convention.
+`data.py` -- score_h5ad.py's `_load_task_metrics` imports only task-qualified metric modules.
+Mixed-task calls may share a process without replacing generic names such as `metrics`.
 
     pip install git+https://github.com/aristoteleo/vec_baselines.git
 

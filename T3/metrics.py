@@ -8,7 +8,8 @@ metrics below are computed on the WT->KO delta.
 """
 from __future__ import annotations
 import numpy as np
-from _reuse import t1_metrics, t2_metrics
+from T1 import metrics as t1_metrics
+from T2 import metrics as t2_metrics
 
 CAP = 5.0     # cap on |log| magnitude ratio (e^5 ~ 150x off)
 
