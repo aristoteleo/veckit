@@ -1,0 +1,65 @@
+{
+  "scope": "gene mismatch validation, including H5AD read; not the scoring pipeline",
+  "python": "3.11.16",
+  "platform": "macOS-27.0.1-arm64-arm-64bit",
+  "numpy": "2.4.6",
+  "scorer_sha256": "8cbd6453930ef7b97f28ab5b3defed64198fe714fdb18809de50b6a1d42559b6",
+  "runs": [
+    {
+      "genes": 500,
+      "cells": 2,
+      "seconds": [
+        0.0024531670005671913,
+        0.0018326250010431977,
+        0.0016360829995392123,
+        0.0016830000004119938,
+        0.0022025829985068412
+      ],
+      "median_seconds": 0.0018326250010431977,
+      "error": "Prediction var_names do not match the task gene panel/order. expected 500 genes, got 500. missing head=[], extra head=[]. Use --allow-reorder only if the same genes are present in a different order.",
+      "input_unchanged": true
+    },
+    {
+      "genes": 2000,
+      "cells": 2,
+      "seconds": [
+        0.0023367919984593755,
+        0.0020039169994561234,
+        0.0018955420000565937,
+        0.0024313750000146683,
+        0.0018073750015901169
+      ],
+      "median_seconds": 0.0020039169994561234,
+      "error": "Prediction var_names do not match the task gene panel/order. expected 2000 genes, got 2000. missing head=[], extra head=[]. Use --allow-reorder only if the same genes are present in a different order.",
+      "input_unchanged": true
+    },
+    {
+      "genes": 8000,
+      "cells": 2,
+      "seconds": [
+        0.00488437499916472,
+        0.004392415999973309,
+        0.005744666999817127,
+        0.004709250000814791,
+        0.0049577910012885695
+      ],
+      "median_seconds": 0.00488437499916472,
+      "error": "Prediction var_names do not match the task gene panel/order. expected 8000 genes, got 8000. missing head=[], extra head=[]. Use --allow-reorder only if the same genes are present in a different order.",
+      "input_unchanged": true
+    },
+    {
+      "genes": 32285,
+      "cells": 2,
+      "seconds": [
+        0.014910083000359009,
+        0.014843417000520276,
+        0.015495083000132581,
+        0.01344733299993095,
+        0.01286449999861361
+      ],
+      "median_seconds": 0.014843417000520276,
+      "error": "Prediction var_names do not match the task gene panel/order. expected 32285 genes, got 32285. missing head=[], extra head=[]. Use --allow-reorder only if the same genes are present in a different order.",
+      "input_unchanged": true
+    }
+  ]
+}

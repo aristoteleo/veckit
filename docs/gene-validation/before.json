@@ -1,0 +1,49 @@
+{
+  "scope": "gene mismatch validation, including H5AD read; not the scoring pipeline",
+  "python": "3.11.16",
+  "platform": "macOS-27.0.1-arm64-arm-64bit",
+  "numpy": "2.4.6",
+  "scorer_sha256": "52034554f03aec10193cb09baa2c78a1de04218ef678f327eb63acc58fa28add",
+  "runs": [
+    {
+      "genes": 500,
+      "cells": 2,
+      "seconds": [
+        0.0051720840001507895
+      ],
+      "median_seconds": 0.0051720840001507895,
+      "error": "Prediction var_names do not match the task gene panel/order. expected 500 genes, got 500. missing head=[], extra head=[]. Use --allow-reorder only if the same genes are present in a different order.",
+      "input_unchanged": true
+    },
+    {
+      "genes": 2000,
+      "cells": 2,
+      "seconds": [
+        0.06416933299988159
+      ],
+      "median_seconds": 0.06416933299988159,
+      "error": "Prediction var_names do not match the task gene panel/order. expected 2000 genes, got 2000. missing head=[], extra head=[]. Use --allow-reorder only if the same genes are present in a different order.",
+      "input_unchanged": true
+    },
+    {
+      "genes": 8000,
+      "cells": 2,
+      "seconds": [
+        1.3609544589999132
+      ],
+      "median_seconds": 1.3609544589999132,
+      "error": "Prediction var_names do not match the task gene panel/order. expected 8000 genes, got 8000. missing head=[], extra head=[]. Use --allow-reorder only if the same genes are present in a different order.",
+      "input_unchanged": true
+    },
+    {
+      "genes": 32285,
+      "cells": 2,
+      "seconds": [
+        34.196751083998606
+      ],
+      "median_seconds": 34.196751083998606,
+      "error": "Prediction var_names do not match the task gene panel/order. expected 32285 genes, got 32285. missing head=[], extra head=[]. Use --allow-reorder only if the same genes are present in a different order.",
+      "input_unchanged": true
+    }
+  ]
+}

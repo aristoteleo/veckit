@@ -69,11 +69,12 @@ def _prediction(path: Path, genes, *, need_coords: bool, allow_reorder: bool):
     # returns, so validation still applies to every OTHER file.
     expected = pred_genes if genes is None else [str(g) for g in genes]
     if pred_genes != expected:
-        if allow_reorder and set(pred_genes) == set(expected) and len(pred_genes) == len(expected):
+        pred_set, expected_set = set(pred_genes), set(expected)
+        if allow_reorder and pred_set == expected_set and len(pred_genes) == len(expected):
             a = a[:, expected].copy()
         else:
-            missing = [g for g in expected if g not in set(pred_genes)][:10]
-            extra = [g for g in pred_genes if g not in set(expected)][:10]
+            missing = [g for g in expected if g not in pred_set][:10]
+            extra = [g for g in pred_genes if g not in expected_set][:10]
             raise ValueError(
                 "Prediction var_names do not match the task gene panel/order. "
                 f"expected {len(expected)} genes, got {len(pred_genes)}. "
